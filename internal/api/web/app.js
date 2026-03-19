@@ -628,9 +628,10 @@ function renderUptimeCanvas() {
   if (!ctx) return;
   ctx.clearRect(0, 0, width, height);
 
+  // New deeper gradient for canvas background
   const bg = ctx.createLinearGradient(0, 0, 0, height);
-  bg.addColorStop(0, "rgba(12, 18, 36, 0.98)");
-  bg.addColorStop(1, "rgba(8, 12, 24, 0.96)");
+  bg.addColorStop(0, "rgba(21, 26, 45, 0.9)");
+  bg.addColorStop(1, "rgba(11, 15, 25, 0.95)");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
@@ -639,7 +640,8 @@ function renderUptimeCanvas() {
   const chartW = width - padX * 2;
   const chartH = height - padY * 2;
 
-  ctx.strokeStyle = "rgba(137,159,246,0.18)";
+  // Lighter glowing grid lines
+  ctx.strokeStyle = "rgba(90, 120, 224, 0.15)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = padY + (chartH * i) / 4;
@@ -696,8 +698,9 @@ function renderUptimeCanvas() {
     const y = padY + (1 - ratio) * chartH;
     const h = chartH - (y - padY);
 
-    let color = "rgba(32,232,138,0.82)";
-    if (p.down_seconds > 0) color = "rgba(232,80,106,0.85)";
+    // Use new theme colors with high contrast
+    let color = "rgba(16, 185, 129, 0.9)"; // --ok color
+    if (p.down_seconds > 0) color = "rgba(239, 68, 68, 0.9)"; // --error color
 
     const roundedX = Math.floor(x);
     const roundedY = Math.floor(y);
@@ -717,14 +720,15 @@ function renderUptimeCanvas() {
         x,
         y,
       };
-      ctx.strokeStyle = "rgba(221, 236, 255, 0.95)";
-      ctx.lineWidth = Math.max(1, Math.floor(dpr));
+      // Bright blue glow for hover state
+      ctx.strokeStyle = "rgba(61, 189, 230, 1)";
+      ctx.lineWidth = Math.max(2, Math.floor(dpr));
       drawRoundedRect(roundedX, roundedY, roundedW, roundedH, radius);
       ctx.stroke();
     }
   });
 
-  ctx.fillStyle = "rgba(156,168,214,0.9)";
+  ctx.fillStyle = "rgba(139, 155, 180, 0.9)"; // --muted color
   ctx.font = `${10 * dpr}px JetBrains Mono`;
   ctx.fillText("100%", 2 * dpr, padY + 10 * dpr);
   ctx.fillText("0%", 10 * dpr, padY + chartH);
@@ -735,7 +739,7 @@ function renderUptimeCanvas() {
     const firstLabel = new Date(first.start).toLocaleString();
     const lastLabel = new Date(last.end).toLocaleString();
     const labelY = height - 4 * dpr;
-    ctx.fillStyle = "rgba(156,168,214,0.85)";
+    ctx.fillStyle = "rgba(139, 155, 180, 0.85)";
     ctx.font = `${10 * dpr}px JetBrains Mono`;
     ctx.fillText(firstLabel, padX, labelY);
     const lastWidth = ctx.measureText(lastLabel).width;
