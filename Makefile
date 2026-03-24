@@ -65,3 +65,6 @@ app:
 
 test:
 	go test ./...
+
+useradmin:
+	go run ./cmd/useradmin $(ARGS)

@@ -27,6 +27,7 @@ type Config struct {
 }
 
 func Load() Config {
+	loadEnv()
 	return Config{
 		APIAddr:            envOrDefault("API_ADDR", ":8080"),
 		PostgresURL:        envOrDefault("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/kraken?sslmode=disable"),
@@ -91,3 +92,25 @@ func envCSV(key string, fallback []string) []string {
 	}
 	return res
 }
+
+func loadEnv() {
+	b, err := os.ReadFile(".env")
+	if err != nil {
+		return
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			val := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
+			if os.Getenv(key) == "" {
+				os.Setenv(key, val)
+			}
+		}
+	}
+}
+
