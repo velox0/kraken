@@ -937,6 +937,27 @@ textarea {
   line-height: 1;
 }
 
+.assertion-critical {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.assertion-critical input[type="checkbox"] {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.critical-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 /* Toast */
 .toast {
   position: fixed;

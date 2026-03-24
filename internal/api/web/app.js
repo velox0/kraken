@@ -895,10 +895,11 @@ function updateProjectInState(project) {
 function summarizeAssertions(assertions) {
   if (!Array.isArray(assertions) || assertions.length === 0) return "default (accept <400)";
   return assertions.map(a => {
-    if (a.type === "status") return `status ${a.operator} ${a.value}`;
-    if (a.type === "body_regex") return `body ${a.operator} /${a.value}/`;
-    if (a.type === "response_time") return `time ${a.operator} ${a.value}ms`;
-    return `${a.type} ${a.operator} ${a.value}`;
+    const crit = a.critical === false ? "⚠" : "🔴";
+    if (a.type === "status") return `${crit} status ${a.operator} ${a.value}`;
+    if (a.type === "body_regex") return `${crit} body ${a.operator} /${a.value}/`;
+    if (a.type === "response_time") return `${crit} time ${a.operator} ${a.value}ms`;
+    return `${crit} ${a.type} ${a.operator} ${a.value}`;
   }).join("; ");
 }
 
@@ -907,8 +908,13 @@ function renderAssertionRow(a = {}) {
   const aOp = a.operator || "in";
   const aVal = a.value || "";
   const aFail = a.on_fail || "";
+  const isCritical = a.critical !== false;
   return `
     <div class="assertion-row">
+      <label class="assertion-critical" title="Critical: triggers alerts & incidents on failure">
+        <input type="checkbox" data-assertion-field="critical" ${isCritical ? "checked" : ""} />
+        <span class="critical-label">Critical</span>
+      </label>
       <select data-assertion-field="type">
         <option value="status" ${aType === "status" ? "selected" : ""}>Status Code</option>
         <option value="body_regex" ${aType === "body_regex" ? "selected" : ""}>Body Regex</option>
@@ -1147,11 +1153,13 @@ async function createSMTPProfileFromSettings() {
 function collectAssertionsFromRow(checkRow) {
   const aRows = checkRow.querySelectorAll(".assertion-row");
   return Array.from(aRows).map(ar => {
+    const isCritical = ar.querySelector('[data-assertion-field="critical"]')?.checked ?? true;
     const a = {
       type: ar.querySelector('[data-assertion-field="type"]')?.value || "status",
       operator: ar.querySelector('[data-assertion-field="operator"]')?.value || "in",
       value: (ar.querySelector('[data-assertion-field="value"]')?.value || "").trim(),
     };
+    if (!isCritical) a.critical = false;
     const onFail = (ar.querySelector('[data-assertion-field="on_fail"]')?.value || "").trim();
     if (onFail) a.on_fail = onFail;
     return a;

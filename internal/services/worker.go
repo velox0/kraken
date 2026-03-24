@@ -69,17 +69,14 @@ func (w *Worker) handleCheckJob(ctx context.Context, job queue.CheckJob) {
 		return
 	}
 
-	openIncident, err := w.Store.GetOpenIncident(ctx, checkCtx.ProjectID)
-	if err != nil {
-		w.Log.Printf("load incident status failed for check %d: %v", checkCtx.ID, err)
-	} else {
-		status := "up"
-		if openIncident != nil {
-			status = "down"
-		}
-		if err := w.Store.RecordProjectUptimeStatus(ctx, checkCtx.ProjectID, status, time.Now().UTC()); err != nil {
-			w.Log.Printf("record uptime failed for project %d: %v", checkCtx.ProjectID, err)
-		}
+	// Record uptime based on the check result directly.
+	// Any failed check (critical or not) counts as downtime in the uptime chart.
+	uptimeStatus := "up"
+	if !result.Healthy {
+		uptimeStatus = "down"
+	}
+	if err := w.Store.RecordProjectUptimeStatus(ctx, checkCtx.ProjectID, uptimeStatus, time.Now().UTC()); err != nil {
+		w.Log.Printf("record uptime failed for project %d: %v", checkCtx.ProjectID, err)
 	}
 
 	if result.Healthy {

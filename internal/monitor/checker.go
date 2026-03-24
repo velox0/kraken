@@ -21,15 +21,23 @@ type Assertion struct {
 	Operator string `json:"operator"`            // "eq","neq","in","not_in","matches","not_matches","lt","gt"
 	Value    string `json:"value"`               // pattern or threshold
 	OnFail   string `json:"on_fail,omitempty"`   // optional custom error message
+	Critical *bool  `json:"critical,omitempty"` // nil/true = critical (counts towards incidents), false = warning only
+}
+
+// IsCritical returns whether this assertion should trigger incident escalation.
+// Defaults to true if not explicitly set.
+func (a Assertion) IsCritical() bool {
+	return a.Critical == nil || *a.Critical
 }
 
 // Result holds the outcome of a single check execution.
 type Result struct {
-	Healthy        bool
-	ResponseTimeMs int
-	ErrorMessage   string
-	StatusCode     int
-	Body           string // truncated response body (HTTP only)
+	Healthy         bool
+	CriticalFailure bool   // true when a critical assertion failed (triggers incidents)
+	ResponseTimeMs  int
+	ErrorMessage    string
+	StatusCode      int
+	Body            string // truncated response body (HTTP only)
 }
 
 const maxBodyCapture = 64 * 1024 // 64 KB
@@ -58,9 +66,11 @@ func RunCheck(ctx context.Context, checkType, target string, timeoutMs int, asse
 	}
 
 	// Evaluate assertions against the result.
-	if err := EvaluateAssertions(assertions, result, checkType); err != "" {
+	aResult := EvaluateAssertions(assertions, result, checkType)
+	if aResult.Failed {
 		result.Healthy = false
-		result.ErrorMessage = err
+		result.CriticalFailure = aResult.Critical
+		result.ErrorMessage = aResult.Message
 		return result
 	}
 
@@ -68,23 +78,48 @@ func RunCheck(ctx context.Context, checkType, target string, timeoutMs int, asse
 	return result
 }
 
+// AssertionResult holds the outcome of assertion evaluation.
+type AssertionResult struct {
+	Failed   bool   // true if any assertion failed
+	Critical bool   // true if a critical assertion failed
+	Message  string // first failure message
+}
+
 // EvaluateAssertions runs every assertion against the result.
-// Returns empty string on success, or the first failure message.
-func EvaluateAssertions(assertions []Assertion, result Result, checkType string) string {
+func EvaluateAssertions(assertions []Assertion, result Result, checkType string) AssertionResult {
 	if len(assertions) == 0 {
-		// Default behavior for HTTP: fail on 4xx/5xx
+		// Default behavior for HTTP: fail on 4xx/5xx (treated as critical)
 		if checkType == "http" && result.StatusCode >= 400 {
-			return fmt.Sprintf("status code %d", result.StatusCode)
+			return AssertionResult{
+				Failed:   true,
+				Critical: true,
+				Message:  fmt.Sprintf("status code %d", result.StatusCode),
+			}
 		}
-		return ""
+		return AssertionResult{}
 	}
+
+	var firstMsg string
+	var anyCritical bool
+	var anyFailed bool
 
 	for _, a := range assertions {
 		if msg := evaluateOne(a, result, checkType); msg != "" {
-			return msg
+			anyFailed = true
+			if firstMsg == "" {
+				firstMsg = msg
+			}
+			if a.IsCritical() {
+				anyCritical = true
+			}
 		}
 	}
-	return ""
+
+	return AssertionResult{
+		Failed:   anyFailed,
+		Critical: anyCritical,
+		Message:  firstMsg,
+	}
 }
 
 func evaluateOne(a Assertion, result Result, checkType string) string {

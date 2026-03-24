@@ -56,29 +56,36 @@ func TestStatusMatchesAny(t *testing.T) {
 }
 
 func TestEvaluateAssertions_NoAssertions(t *testing.T) {
-	// Default: fail on 4xx/5xx for HTTP
 	r200 := Result{StatusCode: 200, ResponseTimeMs: 50}
-	if msg := EvaluateAssertions(nil, r200, "http"); msg != "" {
-		t.Errorf("expected healthy for 200 with no assertions, got: %s", msg)
+	ar := EvaluateAssertions(nil, r200, "http")
+	if ar.Failed {
+		t.Errorf("expected pass for 200 with no assertions, got: %s", ar.Message)
 	}
 	r500 := Result{StatusCode: 500, ResponseTimeMs: 50}
-	if msg := EvaluateAssertions(nil, r500, "http"); msg == "" {
+	ar = EvaluateAssertions(nil, r500, "http")
+	if !ar.Failed {
 		t.Error("expected failure for 500 with no assertions")
 	}
+	if !ar.Critical {
+		t.Error("default failures should be critical")
+	}
 	// Non-HTTP: no default status check
-	if msg := EvaluateAssertions(nil, r500, "tcp"); msg != "" {
-		t.Errorf("expected no failure for tcp with no assertions, got: %s", msg)
+	ar = EvaluateAssertions(nil, r500, "tcp")
+	if ar.Failed {
+		t.Errorf("expected no failure for tcp with no assertions, got: %s", ar.Message)
 	}
 }
 
 func TestEvaluateAssertions_StatusEq(t *testing.T) {
 	assertions := []Assertion{{Type: "status", Operator: "eq", Value: "200"}}
 	r := Result{StatusCode: 200}
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected pass, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass, got: %s", ar.Message)
 	}
 	r.StatusCode = 404
-	if msg := EvaluateAssertions(assertions, r, "http"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
 		t.Error("expected fail for 404 with eq 200")
 	}
 }
@@ -86,11 +93,13 @@ func TestEvaluateAssertions_StatusEq(t *testing.T) {
 func TestEvaluateAssertions_StatusNeq(t *testing.T) {
 	assertions := []Assertion{{Type: "status", Operator: "neq", Value: "404"}}
 	r := Result{StatusCode: 200}
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected pass, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass, got: %s", ar.Message)
 	}
 	r.StatusCode = 404
-	if msg := EvaluateAssertions(assertions, r, "http"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
 		t.Error("expected fail for 404 with neq 404")
 	}
 }
@@ -98,15 +107,18 @@ func TestEvaluateAssertions_StatusNeq(t *testing.T) {
 func TestEvaluateAssertions_StatusIn(t *testing.T) {
 	assertions := []Assertion{{Type: "status", Operator: "in", Value: "2xx,3xx"}}
 	r := Result{StatusCode: 200}
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected pass, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass, got: %s", ar.Message)
 	}
 	r.StatusCode = 301
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected pass for 301, got: %s", msg)
+	ar = EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass for 301, got: %s", ar.Message)
 	}
 	r.StatusCode = 500
-	if msg := EvaluateAssertions(assertions, r, "http"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
 		t.Error("expected fail for 500 with in 2xx,3xx")
 	}
 }
@@ -114,11 +126,13 @@ func TestEvaluateAssertions_StatusIn(t *testing.T) {
 func TestEvaluateAssertions_StatusNotIn(t *testing.T) {
 	assertions := []Assertion{{Type: "status", Operator: "not_in", Value: "4xx,5xx"}}
 	r := Result{StatusCode: 200}
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected pass, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass, got: %s", ar.Message)
 	}
 	r.StatusCode = 500
-	if msg := EvaluateAssertions(assertions, r, "http"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
 		t.Error("expected fail for 500 with not_in 4xx,5xx")
 	}
 }
@@ -126,11 +140,13 @@ func TestEvaluateAssertions_StatusNotIn(t *testing.T) {
 func TestEvaluateAssertions_BodyRegex(t *testing.T) {
 	assertions := []Assertion{{Type: "body_regex", Operator: "matches", Value: `"status"\s*:\s*"ok"`}}
 	r := Result{StatusCode: 200, Body: `{"status": "ok", "data": []}`}
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected pass, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass, got: %s", ar.Message)
 	}
 	r.Body = `{"status": "error"}`
-	if msg := EvaluateAssertions(assertions, r, "http"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
 		t.Error("expected fail for body not matching pattern")
 	}
 }
@@ -138,11 +154,13 @@ func TestEvaluateAssertions_BodyRegex(t *testing.T) {
 func TestEvaluateAssertions_BodyRegexNotMatches(t *testing.T) {
 	assertions := []Assertion{{Type: "body_regex", Operator: "not_matches", Value: `error`}}
 	r := Result{StatusCode: 200, Body: `{"status": "ok"}`}
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected pass, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass, got: %s", ar.Message)
 	}
 	r.Body = `{"error": "something went wrong"}`
-	if msg := EvaluateAssertions(assertions, r, "http"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
 		t.Error("expected fail for body containing 'error'")
 	}
 }
@@ -150,11 +168,13 @@ func TestEvaluateAssertions_BodyRegexNotMatches(t *testing.T) {
 func TestEvaluateAssertions_ResponseTime(t *testing.T) {
 	assertions := []Assertion{{Type: "response_time", Operator: "lt", Value: "5000"}}
 	r := Result{StatusCode: 200, ResponseTimeMs: 1000}
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected pass, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass, got: %s", ar.Message)
 	}
 	r.ResponseTimeMs = 6000
-	if msg := EvaluateAssertions(assertions, r, "http"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
 		t.Error("expected fail for 6000ms with lt 5000")
 	}
 }
@@ -162,9 +182,9 @@ func TestEvaluateAssertions_ResponseTime(t *testing.T) {
 func TestEvaluateAssertions_CustomErrorMessage(t *testing.T) {
 	assertions := []Assertion{{Type: "status", Operator: "eq", Value: "200", OnFail: "Service returned non-200"}}
 	r := Result{StatusCode: 500}
-	msg := EvaluateAssertions(assertions, r, "http")
-	if msg != "Service returned non-200" {
-		t.Errorf("expected custom error message, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Message != "Service returned non-200" {
+		t.Errorf("expected custom error message, got: %s", ar.Message)
 	}
 }
 
@@ -175,12 +195,14 @@ func TestEvaluateAssertions_MultipleAssertions(t *testing.T) {
 		{Type: "body_regex", Operator: "matches", Value: "ok"},
 	}
 	r := Result{StatusCode: 200, ResponseTimeMs: 500, Body: "ok fine"}
-	if msg := EvaluateAssertions(assertions, r, "http"); msg != "" {
-		t.Errorf("expected all pass, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected all pass, got: %s", ar.Message)
 	}
 	// Fail on response time
 	r.ResponseTimeMs = 5000
-	if msg := EvaluateAssertions(assertions, r, "http"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
 		t.Error("expected fail on response time")
 	}
 }
@@ -191,12 +213,84 @@ func TestEvaluateAssertions_SkipStatusForNonHTTP(t *testing.T) {
 		{Type: "response_time", Operator: "lt", Value: "5000"},
 	}
 	r := Result{StatusCode: 0, ResponseTimeMs: 100}
-	// TCP: status assertions should be skipped, but response_time applies
-	if msg := EvaluateAssertions(assertions, r, "tcp"); msg != "" {
-		t.Errorf("expected pass for tcp, got: %s", msg)
+	ar := EvaluateAssertions(assertions, r, "tcp")
+	if ar.Failed {
+		t.Errorf("expected pass for tcp, got: %s", ar.Message)
 	}
 	r.ResponseTimeMs = 6000
-	if msg := EvaluateAssertions(assertions, r, "tcp"); msg == "" {
+	ar = EvaluateAssertions(assertions, r, "tcp")
+	if !ar.Failed {
 		t.Error("expected response_time fail for tcp")
+	}
+}
+
+// ---------- Critical assertion tests ----------
+
+func boolPtr(v bool) *bool { return &v }
+
+func TestEvaluateAssertions_CriticalDefault(t *testing.T) {
+	// No Critical field set → default to critical
+	assertions := []Assertion{{Type: "status", Operator: "eq", Value: "200"}}
+	r := Result{StatusCode: 500}
+	ar := EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
+		t.Fatal("expected failure")
+	}
+	if !ar.Critical {
+		t.Error("expected critical=true by default when Critical field is nil")
+	}
+}
+
+func TestEvaluateAssertions_CriticalExplicitTrue(t *testing.T) {
+	assertions := []Assertion{{Type: "status", Operator: "eq", Value: "200", Critical: boolPtr(true)}}
+	r := Result{StatusCode: 500}
+	ar := EvaluateAssertions(assertions, r, "http")
+	if !ar.Critical {
+		t.Error("expected critical=true when explicitly set")
+	}
+}
+
+func TestEvaluateAssertions_NonCriticalOnly(t *testing.T) {
+	assertions := []Assertion{{Type: "response_time", Operator: "lt", Value: "100", Critical: boolPtr(false)}}
+	r := Result{StatusCode: 200, ResponseTimeMs: 5000}
+	ar := EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
+		t.Fatal("expected failure for slow response")
+	}
+	if ar.Critical {
+		t.Error("expected critical=false for non-critical assertion")
+	}
+}
+
+func TestEvaluateAssertions_MixedCritical(t *testing.T) {
+	assertions := []Assertion{
+		{Type: "status", Operator: "in", Value: "2xx"},                                      // critical (default)
+		{Type: "response_time", Operator: "lt", Value: "100", Critical: boolPtr(false)},      // non-critical
+	}
+	// Both pass
+	r := Result{StatusCode: 200, ResponseTimeMs: 50}
+	ar := EvaluateAssertions(assertions, r, "http")
+	if ar.Failed {
+		t.Errorf("expected pass, got: %s", ar.Message)
+	}
+
+	// Only non-critical fails
+	r.ResponseTimeMs = 5000
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
+		t.Fatal("expected failure")
+	}
+	if ar.Critical {
+		t.Error("only non-critical assertion failed, Critical should be false")
+	}
+
+	// Both fail
+	r.StatusCode = 500
+	ar = EvaluateAssertions(assertions, r, "http")
+	if !ar.Failed {
+		t.Fatal("expected failure")
+	}
+	if !ar.Critical {
+		t.Error("critical assertion also failed, Critical should be true")
 	}
 }

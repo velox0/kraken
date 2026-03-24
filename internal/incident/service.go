@@ -65,7 +65,14 @@ func (s *Service) HandleCheckResult(ctx context.Context, check db.CheckContext, 
 	if result.Healthy {
 		return s.handleHealthy(ctx, check, result)
 	}
-	return s.handleFailure(ctx, check, result)
+
+	// Only escalate to incident tracking for critical assertion failures.
+	// Non-critical failures are recorded as check_run "failed" but don't
+	// increment consecutive failures or trigger alerts.
+	if result.CriticalFailure {
+		return s.handleFailure(ctx, check, result)
+	}
+	return nil
 }
 
 func (s *Service) handleHealthy(ctx context.Context, check db.CheckContext, result monitor.Result) error {
