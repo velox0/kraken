@@ -37,8 +37,8 @@ SELECT id FROM upsert_project
 ON CONFLICT (project_id) DO NOTHING;
 
 -- ── Checks (add/remove rows as needed) ──────────────────────────────
-INSERT INTO checks (project_id, type, target, timeout_ms, expected_status)
-SELECT p.id, 'http', :'base_url' || '/', 5000, 200
+INSERT INTO checks (project_id, type, target, timeout_ms, assertions)
+SELECT p.id, 'http', :'base_url' || '/', 5000, '[{"type":"status","operator":"in","value":"2xx"}]'::jsonb
 FROM projects p WHERE p.name = :'project_name'
   AND NOT EXISTS (
     SELECT 1 FROM checks c WHERE c.project_id = p.id AND c.target = :'base_url' || '/'
@@ -62,7 +62,7 @@ ON CONFLICT DO NOTHING;
 SELECT p.id, p.name, p.domain, p.autofix_enabled, p.check_interval_sec, p.failure_threshold
 FROM projects p WHERE p.name = :'project_name';
 
-SELECT c.id, c.type, c.target, c.timeout_ms, c.expected_status
+SELECT c.id, c.type, c.target, c.timeout_ms, c.assertions
 FROM checks c JOIN projects p ON p.id = c.project_id
 WHERE p.name = :'project_name' ORDER BY c.id;
 

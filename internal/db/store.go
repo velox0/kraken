@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"kraken/internal/monitor"
 )
 
 type Store struct {
@@ -470,29 +473,29 @@ func (s *Store) DeleteProject(ctx context.Context, projectID int64) error {
 }
 
 type Check struct {
-	ID             int64     `json:"id"`
-	ProjectID      int64     `json:"project_id"`
-	Type           string    `json:"type"`
-	Target         string    `json:"target"`
-	TimeoutMs      int       `json:"timeout_ms"`
-	ExpectedStatus *int      `json:"expected_status,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID         int64                `json:"id"`
+	ProjectID  int64                `json:"project_id"`
+	Type       string               `json:"type"`
+	Target     string               `json:"target"`
+	TimeoutMs  int                  `json:"timeout_ms"`
+	Assertions []monitor.Assertion  `json:"assertions"`
+	CreatedAt  time.Time            `json:"created_at"`
 }
 
 type CreateCheckParams struct {
-	ProjectID      int64  `json:"project_id"`
-	Type           string `json:"type"`
-	Target         string `json:"target"`
-	TimeoutMs      int    `json:"timeout_ms"`
-	ExpectedStatus *int   `json:"expected_status"`
+	ProjectID  int64                `json:"project_id"`
+	Type       string               `json:"type"`
+	Target     string               `json:"target"`
+	TimeoutMs  int                  `json:"timeout_ms"`
+	Assertions []monitor.Assertion  `json:"assertions"`
 }
 
 type ReplaceCheckParams struct {
-	ID             *int64 `json:"id"`
-	Type           string `json:"type"`
-	Target         string `json:"target"`
-	TimeoutMs      int    `json:"timeout_ms"`
-	ExpectedStatus *int   `json:"expected_status"`
+	ID         *int64               `json:"id"`
+	Type       string               `json:"type"`
+	Target     string               `json:"target"`
+	TimeoutMs  int                  `json:"timeout_ms"`
+	Assertions []monitor.Assertion  `json:"assertions"`
 }
 
 func (s *Store) CreateCheck(ctx context.Context, p CreateCheckParams) (Check, error) {
@@ -503,33 +506,34 @@ func (s *Store) CreateCheck(ctx context.Context, p CreateCheckParams) (Check, er
 		return Check{}, fmt.Errorf("unsupported check type: %s", p.Type)
 	}
 
+	assertionsJSON, err := json.Marshal(normalizeAssertions(p.Assertions))
+	if err != nil {
+		return Check{}, fmt.Errorf("marshal assertions: %w", err)
+	}
 	query := `
-		INSERT INTO checks (project_id, type, target, timeout_ms, expected_status)
+		INSERT INTO checks (project_id, type, target, timeout_ms, assertions)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, project_id, type, target, timeout_ms, expected_status, created_at
+		RETURNING id, project_id, type, target, timeout_ms, assertions, created_at
 	`
 	var c Check
-	var expected sql.NullInt32
-	err := s.pool.QueryRow(ctx, query,
+	var assertionsRaw []byte
+	err = s.pool.QueryRow(ctx, query,
 		p.ProjectID,
 		p.Type,
 		strings.TrimSpace(p.Target),
 		p.TimeoutMs,
-		nullIntArg(p.ExpectedStatus),
-	).Scan(&c.ID, &c.ProjectID, &c.Type, &c.Target, &c.TimeoutMs, &expected, &c.CreatedAt)
+		assertionsJSON,
+	).Scan(&c.ID, &c.ProjectID, &c.Type, &c.Target, &c.TimeoutMs, &assertionsRaw, &c.CreatedAt)
 	if err != nil {
 		return Check{}, err
 	}
-	if expected.Valid {
-		v := int(expected.Int32)
-		c.ExpectedStatus = &v
-	}
+	c.Assertions = unmarshalAssertions(assertionsRaw)
 	return c, nil
 }
 
 func (s *Store) ListChecksByProject(ctx context.Context, projectID int64) ([]Check, error) {
 	query := `
-		SELECT id, project_id, type, target, timeout_ms, expected_status, created_at
+		SELECT id, project_id, type, target, timeout_ms, assertions, created_at
 		FROM checks
 		WHERE project_id=$1
 		ORDER BY id ASC
@@ -542,14 +546,11 @@ func (s *Store) ListChecksByProject(ctx context.Context, projectID int64) ([]Che
 	checks := make([]Check, 0)
 	for rows.Next() {
 		var c Check
-		var expected sql.NullInt32
-		if err := rows.Scan(&c.ID, &c.ProjectID, &c.Type, &c.Target, &c.TimeoutMs, &expected, &c.CreatedAt); err != nil {
+		var assertionsRaw []byte
+		if err := rows.Scan(&c.ID, &c.ProjectID, &c.Type, &c.Target, &c.TimeoutMs, &assertionsRaw, &c.CreatedAt); err != nil {
 			return nil, err
 		}
-		if expected.Valid {
-			v := int(expected.Int32)
-			c.ExpectedStatus = &v
-		}
+		c.Assertions = unmarshalAssertions(assertionsRaw)
 		checks = append(checks, c)
 	}
 	return checks, rows.Err()
@@ -615,11 +616,15 @@ func (s *Store) ReplaceProjectChecks(ctx context.Context, projectID int64, check
 			if _, ok := existingIDs[checkID]; !ok {
 				return nil, fmt.Errorf("check %d does not belong to project %d", checkID, projectID)
 			}
+			aJSON, mErr := json.Marshal(normalizeAssertions(in.Assertions))
+			if mErr != nil {
+				return nil, fmt.Errorf("marshal assertions: %w", mErr)
+			}
 			cmd, err := tx.Exec(ctx, `
 				UPDATE checks
-				SET type=$3, target=$4, timeout_ms=$5, expected_status=$6
+				SET type=$3, target=$4, timeout_ms=$5, assertions=$6
 				WHERE id=$1 AND project_id=$2
-			`, checkID, projectID, checkType, target, timeout, nullIntArg(in.ExpectedStatus))
+			`, checkID, projectID, checkType, target, timeout, aJSON)
 			if err != nil {
 				return nil, err
 			}
@@ -630,12 +635,16 @@ func (s *Store) ReplaceProjectChecks(ctx context.Context, projectID int64, check
 			continue
 		}
 
+		aJSON2, mErr2 := json.Marshal(normalizeAssertions(in.Assertions))
+		if mErr2 != nil {
+			return nil, fmt.Errorf("marshal assertions: %w", mErr2)
+		}
 		var newID int64
 		if err := tx.QueryRow(ctx, `
-			INSERT INTO checks(project_id, type, target, timeout_ms, expected_status)
+			INSERT INTO checks(project_id, type, target, timeout_ms, assertions)
 			VALUES($1, $2, $3, $4, $5)
 			RETURNING id
-		`, projectID, checkType, target, timeout, nullIntArg(in.ExpectedStatus)).Scan(&newID); err != nil {
+		`, projectID, checkType, target, timeout, aJSON2).Scan(&newID); err != nil {
 			return nil, err
 		}
 		keepIDs = append(keepIDs, newID)
@@ -719,7 +728,7 @@ func (s *Store) ListChecksForProjects(ctx context.Context, projectIDs []int64) (
 		return nil, nil
 	}
 	query := `
-		SELECT id, project_id, type, target, timeout_ms, expected_status, created_at
+		SELECT id, project_id, type, target, timeout_ms, assertions, created_at
 		FROM checks
 		WHERE project_id = ANY($1)
 		ORDER BY id ASC
@@ -733,14 +742,11 @@ func (s *Store) ListChecksForProjects(ctx context.Context, projectIDs []int64) (
 	checks := make([]Check, 0)
 	for rows.Next() {
 		var c Check
-		var expected sql.NullInt32
-		if err := rows.Scan(&c.ID, &c.ProjectID, &c.Type, &c.Target, &c.TimeoutMs, &expected, &c.CreatedAt); err != nil {
+		var assertionsRaw []byte
+		if err := rows.Scan(&c.ID, &c.ProjectID, &c.Type, &c.Target, &c.TimeoutMs, &assertionsRaw, &c.CreatedAt); err != nil {
 			return nil, err
 		}
-		if expected.Valid {
-			v := int(expected.Int32)
-			c.ExpectedStatus = &v
-		}
+		c.Assertions = unmarshalAssertions(assertionsRaw)
 		checks = append(checks, c)
 	}
 	return checks, rows.Err()
@@ -770,7 +776,7 @@ type CheckContext struct {
 
 func (s *Store) GetCheckContext(ctx context.Context, checkID int64) (CheckContext, error) {
 	query := `
-		SELECT c.id, c.project_id, c.type, c.target, c.timeout_ms, c.expected_status, c.created_at,
+		SELECT c.id, c.project_id, c.type, c.target, c.timeout_ms, c.assertions, c.created_at,
 		       p.name, p.domain, p.failure_threshold, p.autofix_enabled, p.max_autofix_retries, p.smtp_profile_id, p.alert_emails,
 		       p.email_subject_opened, p.email_body_opened, p.email_subject_resolved, p.email_body_resolved,
 		       p.email_subject_repeated, p.email_body_repeated, p.email_subject_autofix_limit, p.email_body_autofix_limit,
@@ -780,7 +786,7 @@ func (s *Store) GetCheckContext(ctx context.Context, checkID int64) (CheckContex
 		WHERE c.id = $1
 	`
 	var r CheckContext
-	var expected sql.NullInt32
+	var assertionsRaw []byte
 	var smtp sql.NullInt64
 	err := s.pool.QueryRow(ctx, query, checkID).Scan(
 		&r.ID,
@@ -788,7 +794,7 @@ func (s *Store) GetCheckContext(ctx context.Context, checkID int64) (CheckContex
 		&r.Type,
 		&r.Target,
 		&r.TimeoutMs,
-		&expected,
+		&assertionsRaw,
 		&r.CreatedAt,
 		&r.ProjectName,
 		&r.ProjectDomain,
@@ -812,10 +818,7 @@ func (s *Store) GetCheckContext(ctx context.Context, checkID int64) (CheckContex
 	if err != nil {
 		return CheckContext{}, err
 	}
-	if expected.Valid {
-		v := int(expected.Int32)
-		r.ExpectedStatus = &v
-	}
+	r.Assertions = unmarshalAssertions(assertionsRaw)
 	if smtp.Valid {
 		r.ProjectSMTPID = &smtp.Int64
 	}
@@ -918,11 +921,11 @@ type CheckRun struct {
 }
 
 type PathHealth struct {
-	CheckID            int64      `json:"check_id"`
-	Type               string     `json:"type"`
-	Target             string     `json:"target"`
-	TimeoutMs          int        `json:"timeout_ms"`
-	ExpectedStatus     *int       `json:"expected_status,omitempty"`
+	CheckID            int64                `json:"check_id"`
+	Type               string               `json:"type"`
+	Target             string               `json:"target"`
+	TimeoutMs          int                  `json:"timeout_ms"`
+	Assertions         []monitor.Assertion  `json:"assertions"`
 	LastStatus         string     `json:"last_status"`
 	LastCheckedAt      *time.Time `json:"last_checked_at,omitempty"`
 	LastResponseTimeMs *int       `json:"last_response_time_ms,omitempty"`
@@ -1234,7 +1237,7 @@ func (s *Store) ListPathHealthByProject(ctx context.Context, projectID int64) ([
 			c.type,
 			c.target,
 			c.timeout_ms,
-			c.expected_status,
+			c.assertions,
 			COALESCE(l.status, 'unknown') AS last_status,
 			l.created_at,
 			l.response_time_ms,
@@ -1256,7 +1259,7 @@ func (s *Store) ListPathHealthByProject(ctx context.Context, projectID int64) ([
 	res := make([]PathHealth, 0)
 	for rows.Next() {
 		var item PathHealth
-		var expected sql.NullInt32
+		var assertionsRaw []byte
 		var lastChecked sql.NullTime
 		var responseTime sql.NullInt32
 		var errMessage sql.NullString
@@ -1265,7 +1268,7 @@ func (s *Store) ListPathHealthByProject(ctx context.Context, projectID int64) ([
 			&item.Type,
 			&item.Target,
 			&item.TimeoutMs,
-			&expected,
+			&assertionsRaw,
 			&item.LastStatus,
 			&lastChecked,
 			&responseTime,
@@ -1276,10 +1279,7 @@ func (s *Store) ListPathHealthByProject(ctx context.Context, projectID int64) ([
 		); err != nil {
 			return nil, err
 		}
-		if expected.Valid {
-			v := int(expected.Int32)
-			item.ExpectedStatus = &v
-		}
+		item.Assertions = unmarshalAssertions(assertionsRaw)
 		if lastChecked.Valid {
 			v := lastChecked.Time
 			item.LastCheckedAt = &v
@@ -2121,4 +2121,27 @@ func (s *Store) GetAPIKeyByHash(ctx context.Context, keyHash string) (*APIKey, e
 func (s *Store) DeleteAPIKey(ctx context.Context, id int64) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM api_keys WHERE id=$1`, id)
 	return err
+}
+
+// normalizeAssertions ensures a nil slice is stored as an empty JSON array.
+func normalizeAssertions(a []monitor.Assertion) []monitor.Assertion {
+	if a == nil {
+		return []monitor.Assertion{}
+	}
+	return a
+}
+
+// unmarshalAssertions decodes JSONB bytes into a slice of Assertion.
+func unmarshalAssertions(raw []byte) []monitor.Assertion {
+	if len(raw) == 0 {
+		return []monitor.Assertion{}
+	}
+	var a []monitor.Assertion
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return []monitor.Assertion{}
+	}
+	if a == nil {
+		return []monitor.Assertion{}
+	}
+	return a
 }

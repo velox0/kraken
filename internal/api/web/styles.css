@@ -866,9 +866,9 @@ textarea {
 
 .settings-check-row {
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr) 120px 100px auto;
+  grid-template-columns: 100px minmax(0, 1fr) 120px auto;
   gap: 0.5rem;
-  align-items: end;
+  align-items: start;
   background: #0f1117;
   border: 1px solid #1f2330;
   padding: 1rem;
@@ -882,9 +882,59 @@ textarea {
   gap: 0.3rem;
 }
 
+.settings-check-row .cell-full {
+  grid-column: 1 / -1;
+}
+
 .settings-check-row .label {
   font-size: 0.8rem;
   color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.assertions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.assertion-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.assertion-row select {
+  min-width: 110px;
+  max-width: 140px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.assertion-row .assertion-value {
+  flex: 1;
+  min-width: 100px;
+  max-width: 200px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.assertion-row .assertion-onfail {
+  flex: 1;
+  min-width: 120px;
+  max-width: 220px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1;
 }
 
 /* Toast */

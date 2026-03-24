@@ -209,6 +209,17 @@ func (s *Service) enqueueAlert(ctx context.Context, check db.CheckContext, incid
 
 	now := time.Now().UTC()
 	subjectTpl, bodyTpl := s.templatesForEvent(check, eventType)
+
+	checkIdx := "?"
+	if checks, err := s.store.ListChecksByProject(ctx, check.ProjectID); err == nil {
+		for i, c := range checks {
+			if c.ID == check.ID {
+				checkIdx = strconv.Itoa(i + 1)
+				break
+			}
+		}
+	}
+
 	values := map[string]string{
 		"project_name":     check.ProjectName,
 		"domain":           check.ProjectDomain,
@@ -217,7 +228,7 @@ func (s *Service) enqueueAlert(ctx context.Context, check db.CheckContext, incid
 		"timestamp":        now.Format(time.RFC3339),
 		"autofix_status":   autofixStatus,
 		"error":            errorMessage,
-		"check_id":         strconv.FormatInt(check.ID, 10),
+		"check_id":         checkIdx,
 		"check_target":     check.Target,
 		"check_type":       check.Type,
 		"max_retries":      strconv.Itoa(check.MaxAutofixRetries),
@@ -277,6 +288,17 @@ func (s *Service) sendAutofixExceededEmail(ctx context.Context, check db.CheckCo
 
 	subject := defaultEmailSubjectAutofixLimit
 	now := time.Now().UTC()
+
+	checkIdx := "?"
+	if checks, err := s.store.ListChecksByProject(ctx, check.ProjectID); err == nil {
+		for i, c := range checks {
+			if c.ID == check.ID {
+				checkIdx = strconv.Itoa(i + 1)
+				break
+			}
+		}
+	}
+
 	values := map[string]string{
 		"project_name":     check.ProjectName,
 		"domain":           check.ProjectDomain,
@@ -285,7 +307,7 @@ func (s *Service) sendAutofixExceededEmail(ctx context.Context, check db.CheckCo
 		"timestamp":        now.Format(time.RFC3339),
 		"autofix_attempts": strconv.Itoa(attempts),
 		"max_retries":      strconv.Itoa(check.MaxAutofixRetries),
-		"check_id":         strconv.FormatInt(check.ID, 10),
+		"check_id":         checkIdx,
 		"check_type":       check.Type,
 		"check_target":     check.Target,
 		"autofix_status":   "limit_exceeded",

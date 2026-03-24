@@ -319,11 +319,11 @@ func (h *Handler) updateProjectSettings(w http.ResponseWriter, r *http.Request) 
 		for _, c := range existingChecks {
 			id := c.ID
 			checkInputs = append(checkInputs, db.ReplaceCheckParams{
-				ID:             &id,
-				Type:           c.Type,
-				Target:         c.Target,
-				TimeoutMs:      c.TimeoutMs,
-				ExpectedStatus: c.ExpectedStatus,
+				ID:         &id,
+				Type:       c.Type,
+				Target:     c.Target,
+				TimeoutMs:  c.TimeoutMs,
+				Assertions: c.Assertions,
 			})
 		}
 	}

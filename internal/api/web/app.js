@@ -564,12 +564,12 @@ function renderDashboard() {
   el.checksList.innerHTML = state.data.checks.length
     ? state.data.checks
         .map(
-          (c) => `
+          (c, idx) => `
           <div class="list-item">
             <div class="main">
-              <strong>${escapeHtml(c.type.toUpperCase())}</strong>
+              <strong>Check #${idx + 1} (${escapeHtml(c.type.toUpperCase())})</strong>
               <span class="meta">${escapeHtml(c.target)}</span>
-              <span class="meta">timeout ${c.timeout_ms}ms | expected ${c.expected_status ?? "2xx/3xx"}</span>
+              <span class="meta">timeout ${c.timeout_ms}ms | ${summarizeAssertions(c.assertions)}</span>
             </div>
           </div>`,
         )
@@ -842,14 +842,18 @@ function renderUptimePanel() {
     ? state.data.runs
         .slice(0, 120)
         .map(
-          (r) => `
+          (r) => {
+            const cIdx = state.data.checks.findIndex(c => c.id === r.check_id) + 1;
+            const cLabel = cIdx > 0 ? `#${cIdx}` : `(deleted)`;
+            return `
           <div class="list-item">
             <div class="main">
               <strong class="status-${r.status === "healthy" ? "ok" : "error"}">${escapeHtml(r.status.toUpperCase())}</strong>
-              <span>check ${r.check_id} | ${r.response_time_ms ?? "-"}ms${r.error_message ? ` | ${escapeHtml(clampText(r.error_message, 130))}` : ""}</span>
+              <span>check ${cLabel} | ${r.response_time_ms ?? "-"}ms${r.error_message ? ` | ${escapeHtml(clampText(r.error_message, 130))}` : ""}</span>
               <span class="meta">${fmt(r.created_at)}</span>
             </div>
-          </div>`,
+          </div>`
+          }
         )
         .join("")
     : `<div class="list-item"><div class="main">No check runs yet</div></div>`;
@@ -888,15 +892,54 @@ function updateProjectInState(project) {
   state.selectedProjectId = project.id;
 }
 
+function summarizeAssertions(assertions) {
+  if (!Array.isArray(assertions) || assertions.length === 0) return "default (accept <400)";
+  return assertions.map(a => {
+    if (a.type === "status") return `status ${a.operator} ${a.value}`;
+    if (a.type === "body_regex") return `body ${a.operator} /${a.value}/`;
+    if (a.type === "response_time") return `time ${a.operator} ${a.value}ms`;
+    return `${a.type} ${a.operator} ${a.value}`;
+  }).join("; ");
+}
+
+function renderAssertionRow(a = {}) {
+  const aType = a.type || "status";
+  const aOp = a.operator || "in";
+  const aVal = a.value || "";
+  const aFail = a.on_fail || "";
+  return `
+    <div class="assertion-row">
+      <select data-assertion-field="type">
+        <option value="status" ${aType === "status" ? "selected" : ""}>Status Code</option>
+        <option value="body_regex" ${aType === "body_regex" ? "selected" : ""}>Body Regex</option>
+        <option value="response_time" ${aType === "response_time" ? "selected" : ""}>Response Time</option>
+      </select>
+      <select data-assertion-field="operator">
+        <option value="eq" ${aOp === "eq" ? "selected" : ""}>eq</option>
+        <option value="neq" ${aOp === "neq" ? "selected" : ""}>neq</option>
+        <option value="in" ${aOp === "in" ? "selected" : ""}>in</option>
+        <option value="not_in" ${aOp === "not_in" ? "selected" : ""}>not in</option>
+        <option value="matches" ${aOp === "matches" ? "selected" : ""}>matches</option>
+        <option value="not_matches" ${aOp === "not_matches" ? "selected" : ""}>not matches</option>
+        <option value="lt" ${aOp === "lt" ? "selected" : ""}>< (lt)</option>
+        <option value="gt" ${aOp === "gt" ? "selected" : ""}>> (gt)</option>
+      </select>
+      <input data-assertion-field="value" class="assertion-value" value="${escapeHtml(aVal)}" placeholder="2xx or 200,201 or regex..." />
+      <input data-assertion-field="on_fail" class="assertion-onfail" value="${escapeHtml(aFail)}" placeholder="Custom error (optional)" />
+      <button type="button" class="btn danger btn-sm" data-remove-assertion="1">&times;</button>
+    </div>
+  `;
+}
+
 function renderSettingsChecksRows(checks) {
   if (!el.settingsChecksRows) return;
   const rows = Array.isArray(checks) ? checks : [];
   el.settingsChecksRows.innerHTML = rows.length
     ? rows
         .map((check) => {
-          const expected = check.expected_status ?? "";
           const selectedType = (type) =>
             check.type === type ? "selected" : "";
+          const assertions = Array.isArray(check.assertions) ? check.assertions : [];
           return `
             <div class="settings-check-row" data-check-id="${check.id || ""}">
               <div class="cell">
@@ -915,9 +958,11 @@ function renderSettingsChecksRows(checks) {
                 <span class="label">Timeout (ms)</span>
                 <input data-check-field="timeout_ms" type="number" min="100" value="${check.timeout_ms || 5000}" />
               </div>
-              <div class="cell">
-                <span class="label">Expected</span>
-                <input data-check-field="expected_status" type="number" min="100" max="599" value="${expected}" placeholder="200" />
+              <div class="cell cell-full">
+                <span class="label">Assertions <button type="button" class="btn secondary btn-sm" data-add-assertion="1">+ Add</button></span>
+                <div class="assertions-container">
+                  ${assertions.map(a => renderAssertionRow(a)).join("")}
+                </div>
               </div>
               <div class="cell">
                 <span class="label">Action</span>
@@ -934,6 +979,7 @@ function addSettingsCheckRow(defaults = {}) {
   if (!el.settingsChecksRows) return;
   const selectedType = (type) =>
     (defaults.type || "http") === type ? "selected" : "";
+  const assertions = Array.isArray(defaults.assertions) ? defaults.assertions : [];
   const row = document.createElement("div");
   row.className = "settings-check-row";
   row.dataset.checkId = defaults.id ? String(defaults.id) : "";
@@ -954,9 +1000,11 @@ function addSettingsCheckRow(defaults = {}) {
       <span class="label">Timeout (ms)</span>
       <input data-check-field="timeout_ms" type="number" min="100" value="${defaults.timeout_ms || 5000}" />
     </div>
-    <div class="cell">
-      <span class="label">Expected</span>
-      <input data-check-field="expected_status" type="number" min="100" max="599" value="${defaults.expected_status ?? ""}" placeholder="200" />
+    <div class="cell cell-full">
+      <span class="label">Assertions <button type="button" class="btn secondary btn-sm" data-add-assertion="1">+ Add</button></span>
+      <div class="assertions-container">
+        ${assertions.map(a => renderAssertionRow(a)).join("")}
+      </div>
     </div>
     <div class="cell">
       <span class="label">Action</span>
@@ -1096,6 +1144,20 @@ async function createSMTPProfileFromSettings() {
   }
 }
 
+function collectAssertionsFromRow(checkRow) {
+  const aRows = checkRow.querySelectorAll(".assertion-row");
+  return Array.from(aRows).map(ar => {
+    const a = {
+      type: ar.querySelector('[data-assertion-field="type"]')?.value || "status",
+      operator: ar.querySelector('[data-assertion-field="operator"]')?.value || "in",
+      value: (ar.querySelector('[data-assertion-field="value"]')?.value || "").trim(),
+    };
+    const onFail = (ar.querySelector('[data-assertion-field="on_fail"]')?.value || "").trim();
+    if (onFail) a.on_fail = onFail;
+    return a;
+  }).filter(a => a.value !== "");
+}
+
 function collectSettingsChecks() {
   if (!el.settingsChecksRows) return [];
   const rows = Array.from(
@@ -1113,11 +1175,7 @@ function collectSettingsChecks() {
       const timeoutMs = Number(
         row.querySelector('[data-check-field="timeout_ms"]')?.value || "5000",
       );
-      const expectedRaw =
-        row
-          .querySelector('[data-check-field="expected_status"]')
-          ?.value?.trim() || "";
-      const expected = expectedRaw ? Number(expectedRaw) : null;
+      const assertions = collectAssertionsFromRow(row);
       if (!target) {
         return null;
       }
@@ -1127,8 +1185,7 @@ function collectSettingsChecks() {
         target,
         timeout_ms:
           Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 5000,
-        expected_status:
-          expected && Number.isFinite(expected) ? expected : null,
+        assertions,
       };
     })
     .filter(Boolean);
@@ -1405,7 +1462,7 @@ async function createProject(event) {
           type: "http",
           target: normalizeTarget(domain, path),
           timeout_ms: 5000,
-          expected_status: 200,
+          assertions: [{type: "status", operator: "in", value: "2xx"}],
         }),
       });
     }
@@ -1822,10 +1879,29 @@ function attachEvents() {
   if (el.settingsChecksRows) {
     el.settingsChecksRows.addEventListener("click", (event) => {
       const removeBtn = event.target.closest("button[data-remove-check]");
-      if (!removeBtn) return;
-      const row = removeBtn.closest(".settings-check-row");
-      if (row) {
-        row.remove();
+      if (removeBtn) {
+        const row = removeBtn.closest(".settings-check-row");
+        if (row) row.remove();
+        return;
+      }
+      const addAssertionBtn = event.target.closest("button[data-add-assertion]");
+      if (addAssertionBtn) {
+        const checkRow = addAssertionBtn.closest(".settings-check-row");
+        if (checkRow) {
+          const container = checkRow.querySelector(".assertions-container");
+          if (container) {
+            const tmp = document.createElement("div");
+            tmp.innerHTML = renderAssertionRow();
+            container.appendChild(tmp.firstElementChild);
+          }
+        }
+        return;
+      }
+      const rmAssertionBtn = event.target.closest("button[data-remove-assertion]");
+      if (rmAssertionBtn) {
+        const assertionRow = rmAssertionBtn.closest(".assertion-row");
+        if (assertionRow) assertionRow.remove();
+        return;
       }
     });
   }

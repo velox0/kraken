@@ -93,8 +93,8 @@ for p in "${PATHS[@]}"; do
   p="$(echo "$p" | xargs)"  # trim whitespace
   TARGET="${BASE_URL}${p}"
   CHECKS_SQL+="
-INSERT INTO checks (project_id, type, target, timeout_ms, expected_status)
-SELECT p.id, 'http', '${TARGET}', 5000, 200
+INSERT INTO checks (project_id, type, target, timeout_ms, assertions)
+SELECT p.id, 'http', '${TARGET}', 5000, '[{"type":"status","operator":"in","value":"2xx"}]'::jsonb
 FROM projects p
 WHERE p.name = '${PROJECT_NAME}'
   AND NOT EXISTS (
@@ -153,7 +153,7 @@ ${FIX_SQL}
 SELECT p.id, p.name, p.domain, p.autofix_enabled, p.check_interval_sec, p.failure_threshold
 FROM projects p WHERE p.name = '${PROJECT_NAME}';
 
-SELECT c.id, c.type, c.target, c.timeout_ms, c.expected_status
+SELECT c.id, c.type, c.target, c.timeout_ms, c.assertions
 FROM checks c JOIN projects p ON p.id = c.project_id
 WHERE p.name = '${PROJECT_NAME}' ORDER BY c.id;
 "

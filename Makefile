@@ -1,4 +1,4 @@
-.PHONY: up down migrate seed sample api scheduler worker notifier app test \
+.PHONY: up down migrate docker-migrate seed sample api scheduler worker notifier app test \
        setup-postgres setup-redis setup-local
 
 up:
@@ -41,6 +41,18 @@ migrate:
 	psql "$$DATABASE_URL" -f db/migrations/0003_autofix_retries.sql
 	psql "$$DATABASE_URL" -f db/migrations/0004_email_templates.sql
 	psql "$$DATABASE_URL" -f db/migrations/0005_rbac.sql
+	psql "$$DATABASE_URL" -f db/migrations/0006_check_assertions.sql
+
+docker-migrate:
+	@PG_CONTAINER=$$(docker ps -qf "ancestor=postgres:16" 2>/dev/null); \
+	if [ -z "$$PG_CONTAINER" ]; then PG_CONTAINER=$$(docker ps -qf "name=postgres" 2>/dev/null); fi; \
+	if [ -z "$$PG_CONTAINER" ]; then echo "ERROR: No postgres container found. Is it running?"; exit 1; fi; \
+	echo "===> Using container $$PG_CONTAINER"; \
+	for f in db/migrations/*.sql; do \
+		echo "===> $$f"; \
+		docker exec -i $$PG_CONTAINER psql -U postgres -d kraken < "$$f"; \
+	done; \
+	echo "===> All migrations applied."
 
 seed:
 	@for f in db/seeds/*.sql; do echo "==> $$f"; psql "$$DATABASE_URL" -f "$$f"; done

@@ -63,7 +63,7 @@ func (w *Worker) handleCheckJob(ctx context.Context, job queue.CheckJob) {
 		return
 	}
 
-	result := monitor.RunCheck(ctx, checkCtx.Type, checkCtx.Target, checkCtx.TimeoutMs, checkCtx.ExpectedStatus)
+	result := monitor.RunCheck(ctx, checkCtx.Type, checkCtx.Target, checkCtx.TimeoutMs, checkCtx.Assertions)
 	if err := w.Incident.HandleCheckResult(ctx, checkCtx, result); err != nil {
 		w.Log.Printf("handle check result failed for check %d: %v", checkCtx.ID, err)
 		return
