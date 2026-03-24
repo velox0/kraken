@@ -2,7 +2,7 @@
 
 Kraken is a project-based uptime monitor with queue-driven checks, incidents, SMTP alerts, and autofix hooks.
 
-> ⚠️ **Warning:** Kraken can run arbitrary shell scripts on your system when checks fail or manually. Use with caution, especially in production environments. Always review and test fix scripts before attaching them to projects. Auth is not implemented directly in Kraken.
+> ⚠️ **Warning:** Kraken can run arbitrary shell scripts on your system when checks fail or manually. Use with caution, especially in production environments. Always review and test fix scripts before attaching them to projects.
 
 <p align="center">
   <img src="docs/screenshots/screenshot.png" alt="Kraken UI screenshot" width="800" />
@@ -93,7 +93,13 @@ make seed
 make app
 ```
 
-6. **Open UI:** [http://localhost:8080/](http://localhost:8080/)
+6. **Create an admin user:**
+
+```bash
+make useradmin ARGS="create --email admin@example.com --password mysecret22 --name Admin"
+```
+
+7. **Open UI:** [http://localhost:8080/](http://localhost:8080/) and log in with the credentials you just created.
 
 ---
 
@@ -115,6 +121,37 @@ make app
 | `make worker`         | Run only the worker                                    |
 | `make notifier`       | Run only the notifier                                  |
 | `make test`           | Run all Go tests                                       |
+| `make useradmin`      | Run the CLI tool for managing super-admin accounts     |
+
+---
+
+## Authentication & User Management
+
+Kraken includes a built-in authentication system with role-based access control (RBAC):
+
+- **Scopes & Roles:** Users can be granted specific scopes (e.g., `projects:read`, `fixes:write`) and are assigned a `role_level` (0 is highest). The `admin` scope grants full access. Admins can only manage users with a numerically higher (lower privilege) role level.
+- **Admin Panel:** Users with the `users:manage` or `admin` scope can access the User Management panel in the web UI to create, edit, delete, and unfreeze users.
+- **Security:** 
+  - Login attempts have a random delay (200-800ms) to prevent timing attacks.
+  - Accounts are frozen after 5 consecutive failed login attempts.
+- **CLI Management:** The `useradmin` CLI tool is used to manage super-admin accounts directly via the database, bypassing the web UI.
+
+### CLI Tool Usage
+
+Create or update a super-admin user (role level 0, all scopes):
+```bash
+make useradmin ARGS="create --email admin@example.com --password mysecret22 --name Admin"
+```
+
+Change an existing user's password:
+```bash
+make useradmin ARGS="passwd --email admin@example.com --password newpass"
+```
+
+View user information:
+```bash
+make useradmin ARGS="info --email admin@example.com"
+```
 
 ## Scripts
 
@@ -148,6 +185,7 @@ make app
 | `EMAIL_USER`           |                                                                      | SMTP username                                                 |
 | `EMAIL_PASS`           |                                                                      | SMTP password                                                 |
 | `EMAIL_FROM`           | `EMAIL_USER`                                                         | Default sender email                                          |
+| `ADMIN_CONTACT_EMAIL`  |                                                                      | Email to display when a user's account is locked out          |
 
 ---
 
