@@ -934,3 +934,37 @@ textarea {
   .form-grid { grid-template-columns: 1fr; }
   .settings-check-row { grid-template-columns: 1fr; gap: 1rem; }
 }
+
+/* Admin Panel */
+.scope-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.scope-chip {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--bg-card-border);
+  background: var(--bg-card);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.scope-chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--bg-card-border);
+  gap: 12px;
+}
+.user-card:last-child { border-bottom: none; }
+.user-card .user-info { flex: 1; min-width: 0; }
+.user-card .user-info strong { color: var(--text-bright); display: block; }
+.user-card .user-info .meta { color: var(--muted); font-size: 0.78rem; }
+.user-card .user-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.badge-frozen { background: var(--error); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+.badge-level { background: var(--bg-card-border); color: var(--text); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }

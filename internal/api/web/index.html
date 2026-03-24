@@ -42,6 +42,10 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             Uptime
           </button>
+          <button id="adminNavBtn" class="nav-btn hidden" data-view="adminView">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Admin
+          </button>
         </nav>
 
         <div class="sidebar-footer">
@@ -50,6 +54,11 @@
             <span id="liveText">Live updates on</span>
           </div>
           <p id="lastUpdatedText" class="muted">Last updated: never</p>
+          <p id="currentUserEmail" class="muted" style="font-size:0.78rem"></p>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button id="changePwBtn" class="btn ghost" style="font-size:0.75rem;padding:3px 8px">Password</button>
+            <button id="logoutBtn" class="btn ghost" style="font-size:0.75rem;padding:3px 8px">Logout</button>
+          </div>
         </div>
       </aside>
 
@@ -753,6 +762,82 @@
               <button id="editFixSaveBtn" class="btn primary" type="button">
                 Save Fix
               </button>
+            </div>
+          </div>
+        </div>
+        <!-- Admin View -->
+        <div id="adminView" class="view">
+          <div class="section-card">
+            <div class="section-header"><h3>User Management</h3><button id="openCreateUserBtn" class="btn primary">+ Create User</button></div>
+            <div id="adminUsersList" class="list-scroll"></div>
+          </div>
+        </div>
+
+        <!-- Create User Modal -->
+        <div id="createUserModal" class="modal-overlay hidden">
+          <div class="modal-container modal-sm">
+            <div class="modal-header"><div><p class="muted">Admin</p><h2>Create User</h2></div><button class="btn ghost modal-close-btn" onclick="document.getElementById('createUserModal').classList.add('hidden')">&times;</button></div>
+            <div class="modal-body">
+              <form id="createUserForm" class="form-grid compact">
+                <label class="full">Email<input id="cuEmail" type="email" required placeholder="user@example.com" /></label>
+                <label class="full">Display Name<input id="cuName" placeholder="John Doe" /></label>
+                <label class="full">Password<input id="cuPassword" type="password" required minlength="6" placeholder="min 6 chars" /></label>
+                <label class="full">Role Level<input id="cuRoleLevel" type="number" min="1" value="100" required /></label>
+                <div class="full"><p class="muted" style="margin:0 0 4px">Scopes</p><div id="cuScopesWrap" class="scope-chips"></div></div>
+                <button class="btn primary full" type="submit">Create User</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit User Modal -->
+        <div id="editUserModal" class="modal-overlay hidden">
+          <div class="modal-container modal-sm">
+            <div class="modal-header"><div><p class="muted">Admin</p><h2>Edit User</h2></div><button class="btn ghost modal-close-btn" onclick="document.getElementById('editUserModal').classList.add('hidden')">&times;</button></div>
+            <div class="modal-body">
+              <form id="editUserForm" class="form-grid compact">
+                <input type="hidden" id="euId" />
+                <label class="full">Email<input id="euEmail" type="email" required /></label>
+                <label class="full">Display Name<input id="euName" /></label>
+                <label class="full">Role Level<input id="euRoleLevel" type="number" min="1" required /></label>
+                <label class="full">New Password (optional)<input id="euPassword" type="password" minlength="6" placeholder="leave blank to keep" /></label>
+                <div class="full"><p class="muted" style="margin:0 0 4px">Scopes</p><div id="euScopesWrap" class="scope-chips"></div></div>
+                <button class="btn primary full" type="submit">Save Changes</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Change Password Modal -->
+        <div id="changePwModal" class="modal-overlay hidden">
+          <div class="modal-container modal-sm">
+            <div class="modal-header"><div><p class="muted">Account</p><h2>Change Password</h2></div><button class="btn ghost modal-close-btn" onclick="document.getElementById('changePwModal').classList.add('hidden')">&times;</button></div>
+            <div class="modal-body">
+              <form id="changePwForm" class="form-grid compact">
+                <label class="full">Current Password<input id="cpCurrent" type="password" required /></label>
+                <label class="full">New Password<input id="cpNew" type="password" required minlength="6" /></label>
+                <button class="btn primary full" type="submit">Update</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal-overlay hidden">
+          <div class="modal-container modal-sm">
+            <div class="modal-header">
+              <div>
+                <p class="muted">Authentication Required</p>
+                <h2>Login</h2>
+              </div>
+            </div>
+            <div class="modal-body">
+              <form id="loginForm" class="form-grid compact">
+                <label class="full">Email<input id="loginEmail" type="email" required placeholder="admin@example.com" /></label>
+                <label class="full">Password<input id="loginPassword" type="password" required placeholder="••••••••" /></label>
+                <p id="loginError" class="muted" style="color:var(--error);display:none;margin:0"></p>
+                <button id="loginSubmitBtn" class="btn primary full" type="submit">Login</button>
+              </form>
             </div>
           </div>
         </div>

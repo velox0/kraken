@@ -99,6 +99,7 @@ const el = {
   fixesView: document.getElementById("fixesView"),
   uptimeView: document.getElementById("uptimeView"),
   settingsForm: document.getElementById("settingsForm"),
+  adminView: document.getElementById("adminView"),
   settingsName: document.getElementById("settingsName"),
   settingsDomain: document.getElementById("settingsDomain"),
   settingsInterval: document.getElementById("settingsInterval"),
@@ -189,6 +190,11 @@ async function api(path, opts = {}) {
   }
 
   if (!res.ok) {
+    if (res.status === 401 && path !== "/v1/login") {
+      const modal = document.getElementById("loginModal");
+      if (modal) modal.classList.remove("hidden");
+      throw new Error("Unauthorized - Please Login");
+    }
     const msg = parsed?.error || `request failed (${res.status})`;
     throw new Error(msg);
   }
@@ -463,6 +469,9 @@ function selectView(viewId) {
   } else {
     state.uptimeHoverIndex = null;
     hideUptimeTooltip();
+  }
+  if (safeViewId === "adminView") {
+    loadAdminUsers();
   }
 }
 
@@ -1878,9 +1887,267 @@ function attachEvents() {
   bindPatternInputs();
 }
 
+function bindAuthEvents() {
+  if (bindAuthEvents._done) return;
+  bindAuthEvents._done = true;
+
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById("loginError");
+      errEl.style.display = "none";
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+      const btn = document.getElementById("loginSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Logging in...";
+      try {
+        const r = await fetch("/v1/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await r.json().catch(() => null);
+        if (!r.ok) {
+          const msg = data?.error || "Login Failed";
+          errEl.textContent = msg;
+          errEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Login";
+          return;
+        }
+        document.getElementById("loginModal").classList.add("hidden");
+        showToast("Logged in successfully");
+        btn.disabled = false;
+        btn.textContent = "Login";
+        boot();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "Login";
+      }
+    });
+  }
+
+  // ----- Logout -----
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      try { await api("/v1/logout", { method: "POST" }); } catch(_){}
+      location.reload();
+    });
+  }
+
+  // ----- Change Password -----
+  const changePwBtn = document.getElementById("changePwBtn");
+  if (changePwBtn) {
+    changePwBtn.addEventListener("click", () => {
+      document.getElementById("changePwModal").classList.remove("hidden");
+    });
+  }
+  const changePwForm = document.getElementById("changePwForm");
+  if (changePwForm) {
+    changePwForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await api("/v1/auth/password", {
+          method: "PUT",
+          body: JSON.stringify({
+            current_password: document.getElementById("cpCurrent").value,
+            new_password: document.getElementById("cpNew").value
+          })
+        });
+        document.getElementById("changePwModal").classList.add("hidden");
+        changePwForm.reset();
+        showToast("Password changed");
+      } catch (err) { showToast(err.message, "error"); }
+    });
+  }
+
+  // ----- Admin Panel -----
+  const ALL_SCOPES = [
+    "admin","users:manage",
+    "projects:read","projects:write","projects:delete","projects.autofix:write",
+    "checks:read","checks:write","checks:run","check_runs:read",
+    "logs:read","incidents:read","paths:read","uptime:read",
+    "fixes:read","fixes:write","fixes:delete","fixes:run",
+    "smtp_profiles:read","smtp_profiles:write"
+  ];
+
+  function renderScopeChips(container, selectedScopes) {
+    container.innerHTML = ALL_SCOPES.map(s =>
+      `<span class="scope-chip${selectedScopes.includes(s) ? ' active' : ''}" data-scope="${s}">${s}</span>`
+    ).join("");
+    container.querySelectorAll(".scope-chip").forEach(chip => {
+      chip.addEventListener("click", () => chip.classList.toggle("active"));
+    });
+  }
+
+  function getSelectedScopes(container) {
+    return Array.from(container.querySelectorAll(".scope-chip.active")).map(c => c.dataset.scope);
+  }
+
+  const openCreateUserBtn = document.getElementById("openCreateUserBtn");
+  if (openCreateUserBtn) {
+    openCreateUserBtn.addEventListener("click", () => {
+      const wrap = document.getElementById("cuScopesWrap");
+      renderScopeChips(wrap, []);
+      document.getElementById("createUserModal").classList.remove("hidden");
+    });
+  }
+
+  const createUserForm = document.getElementById("createUserForm");
+  if (createUserForm) {
+    createUserForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await api("/v1/admin/users/", {
+          method: "POST",
+          body: JSON.stringify({
+            email: document.getElementById("cuEmail").value,
+            display_name: document.getElementById("cuName").value,
+            password: document.getElementById("cuPassword").value,
+            role_level: Number(document.getElementById("cuRoleLevel").value),
+            scopes: getSelectedScopes(document.getElementById("cuScopesWrap"))
+          })
+        });
+        document.getElementById("createUserModal").classList.add("hidden");
+        createUserForm.reset();
+        showToast("User created");
+        loadAdminUsers();
+      } catch (err) { showToast(err.message, "error"); }
+    });
+  }
+
+  const editUserForm = document.getElementById("editUserForm");
+  if (editUserForm) {
+    editUserForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const uid = document.getElementById("euId").value;
+      try {
+        await api(`/v1/admin/users/${uid}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            email: document.getElementById("euEmail").value,
+            display_name: document.getElementById("euName").value,
+            role_level: Number(document.getElementById("euRoleLevel").value),
+            scopes: getSelectedScopes(document.getElementById("euScopesWrap")),
+            password: document.getElementById("euPassword").value || undefined
+          })
+        });
+        document.getElementById("editUserModal").classList.add("hidden");
+        showToast("User updated");
+        loadAdminUsers();
+      } catch (err) { showToast(err.message, "error"); }
+    });
+  }
+
+  const adminUsersList = document.getElementById("adminUsersList");
+  if (adminUsersList) {
+    adminUsersList.addEventListener("click", async (event) => {
+      const editBtn = event.target.closest("button[data-edit-uid]");
+      if (editBtn) {
+        const uid = editBtn.dataset.editUid;
+        try {
+          const user = await api(`/v1/admin/users/${uid}`);
+          document.getElementById("euId").value = user.id;
+          document.getElementById("euEmail").value = user.email;
+          document.getElementById("euName").value = user.display_name || "";
+          document.getElementById("euRoleLevel").value = user.role_level;
+          document.getElementById("euPassword").value = "";
+          renderScopeChips(document.getElementById("euScopesWrap"), user.scopes || []);
+          document.getElementById("editUserModal").classList.remove("hidden");
+        } catch (err) { showToast(err.message, "error"); }
+        return;
+      }
+
+      const delBtn = event.target.closest("button[data-del-uid]");
+      if (delBtn) {
+        if (!confirm(`Delete user ${delBtn.dataset.delEmail}?`)) return;
+        try {
+          await api(`/v1/admin/users/${delBtn.dataset.delUid}`, { method: "DELETE" });
+          showToast("User deleted");
+          loadAdminUsers();
+        } catch (err) { showToast(err.message, "error"); }
+        return;
+      }
+
+      const unfreezeBtn = event.target.closest("button[data-unfreeze-uid]");
+      if (unfreezeBtn) {
+        try {
+          await api(`/v1/admin/users/${unfreezeBtn.dataset.unfreezeUid}/unfreeze`, { method: "POST" });
+          showToast("User unfrozen");
+          loadAdminUsers();
+        } catch (err) { showToast(err.message, "error"); }
+      }
+    });
+  }
+}
+
+async function loadAdminUsers() {
+  const list = document.getElementById("adminUsersList");
+  if (!list) return;
+  try {
+    const users = await api("/v1/admin/users/");
+    if (!users || users.length === 0) {
+      list.innerHTML = `<div class="list-item"><div class="main">No users found</div></div>`;
+      return;
+    }
+    list.innerHTML = users.map(u => `
+      <div class="user-card">
+        <div class="user-info">
+          <strong>${escapeHtml(u.display_name || u.email)}</strong>
+          <span class="meta">${escapeHtml(u.email)} · Level ${u.role_level}
+            ${u.is_frozen ? '<span class="badge-frozen">FROZEN</span>' : ''}
+          </span>
+          <span class="meta">${(u.scopes || []).map(s => `<span class="badge-level">${escapeHtml(s)}</span>`).join(" ")}</span>
+        </div>
+        <div class="user-actions">
+          <button class="btn secondary" data-edit-uid="${u.id}">Edit</button>
+          ${u.is_frozen ? `<button class="btn secondary" data-unfreeze-uid="${u.id}">Unfreeze</button>` : ''}
+          <button class="btn danger" data-del-uid="${u.id}" data-del-email="${escapeHtml(u.email)}">Delete</button>
+        </div>
+      </div>
+    `).join("");
+  } catch (err) {
+    list.innerHTML = `<div class="list-item"><div class="main">Failed to load users</div></div>`;
+  }
+}
+
+async function loadCurrentUser() {
+  try {
+    const me = await fetch("/v1/auth/me");
+    if (!me.ok) {
+      document.getElementById("loginModal").classList.remove("hidden");
+      return null;
+    }
+    const user = await me.json();
+    const emailEl = document.getElementById("currentUserEmail");
+    if (emailEl) emailEl.textContent = user.email || "";
+    // Show admin nav if user has users:manage or admin scope
+    const hasAdmin = (user.scopes || []).some(s => s === "admin" || s === "users:manage");
+    const adminNavBtn = document.getElementById("adminNavBtn");
+    if (adminNavBtn) {
+      if (hasAdmin) adminNavBtn.classList.remove("hidden");
+      else adminNavBtn.classList.add("hidden");
+    }
+    return user;
+  } catch (_) {
+    document.getElementById("loginModal").classList.remove("hidden");
+    return null;
+  }
+}
+
 async function boot() {
   renderTemplateButtons();
   setRange("1h");
+  bindAuthEvents();
+
+  const user = await loadCurrentUser();
+  if (!user) return; // blocked on login
+
   const initialView = getPersistedView() || "dashboardView";
   const safeInitialView =
     initialView === "settingsView" ? "dashboardView" : initialView;
@@ -1913,3 +2180,4 @@ async function boot() {
 }
 
 boot();
+
