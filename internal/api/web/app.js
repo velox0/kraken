@@ -74,13 +74,10 @@ const el = {
   pathsHealthList: document.getElementById("pathsHealthList"),
   pathLogsTitle: document.getElementById("pathLogsTitle"),
   pathLogsList: document.getElementById("pathLogsList"),
-  fixForm: document.getElementById("fixForm"),
   fixUploadForm: document.getElementById("fixUploadForm"),
-  fixPattern: document.getElementById("fixPattern"),
   uploadFixPattern: document.getElementById("uploadFixPattern"),
-  templateList:
-    document.getElementById("templateList") ||
-    document.getElementById("fixTemplateList"),
+  uploadFixTemplate: document.getElementById("uploadFixTemplate"),
+  editFixTemplate: document.getElementById("editFixTemplate"),
   uptimeRecent: document.getElementById("uptimeRecent"),
   uptimeTotal: document.getElementById("uptimeTotal"),
   healthyRuns: document.getElementById("healthyRuns"),
@@ -298,14 +295,36 @@ function renderProjectSelect() {
     .join("");
 }
 
-function renderTemplateButtons() {
-  if (!el.templateList) return;
-  el.templateList.innerHTML = errorTemplates
+function populateTemplateDropdowns() {
+  const optionsHTML = errorTemplates
     .map(
-      (tpl, idx) =>
-        `<button class="template-btn" data-template-index="${idx}">${escapeHtml(tpl.label)}</button>`,
+      (tpl, i) => `<option value="${i}">${escapeHtml(tpl.label)}</option>`
     )
     .join("");
+    
+  if (el.uploadFixTemplate) {
+    el.uploadFixTemplate.innerHTML += optionsHTML;
+    el.uploadFixTemplate.addEventListener("change", (e) => {
+      if (e.target.value !== "") {
+        const tpl = errorTemplates[Number(e.target.value)];
+        if (tpl && el.uploadFixPattern) {
+          el.uploadFixPattern.value = tpl.value;
+        }
+      }
+    });
+  }
+
+  if (el.editFixTemplate) {
+    el.editFixTemplate.innerHTML += optionsHTML;
+    el.editFixTemplate.addEventListener("change", (e) => {
+      if (e.target.value !== "") {
+        const tpl = errorTemplates[Number(e.target.value)];
+        if (tpl && el.editFixPattern) {
+          el.editFixPattern.value = tpl.value;
+        }
+      }
+    });
+  }
 }
 
 function setActionButtons(enabled) {
@@ -496,11 +515,9 @@ function closeSettingsModal() {
 function toggleSidebar(open) {
   if (!el.sidebar) return;
   if (open) {
-    el.sidebar.classList.remove("closed");
-    if (el.openSidebarBtn) el.openSidebarBtn.classList.add("hidden");
+    el.sidebar.classList.remove("collapsed");
   } else {
-    el.sidebar.classList.add("closed");
-    if (el.openSidebarBtn) el.openSidebarBtn.classList.remove("hidden");
+    el.sidebar.classList.add("collapsed");
   }
 }
 
@@ -601,15 +618,19 @@ function renderDashboard() {
         .map(
           (f) => `
           <div class="list-item">
-            <div class="main">
-              <strong>${escapeHtml(f.name)}</strong>
-              <span class="meta">${escapeHtml(f.type)} | ${escapeHtml(f.script_path)} | timeout ${f.timeout_sec}s</span>
-              <span class="meta">pattern: ${escapeHtml(clampText(f.supported_error_pattern, 120))}</span>
+            <div class="main" style="gap:0.1rem;">
+              <strong style="font-size:1rem;">${escapeHtml(f.name)}</strong>
+              <span class="meta">Type: ${escapeHtml(f.type.toUpperCase())} &nbsp;&bull;&nbsp; Timeout: ${f.timeout_sec}s</span>
             </div>
             <div class="inline-actions">
-              <button class="btn secondary" data-edit-fix-id="${f.id}">Edit</button>
-              <button class="btn danger" data-delete-fix-id="${f.id}" data-fix-name="${escapeHtml(f.name)}">Delete</button>
-              <button class="btn secondary" data-run-fix-id="${f.id}">Run</button>
+              <button class="btn ghost" data-edit-fix-id="${f.id}">Edit</button>
+              <button class="btn ghost danger" data-delete-fix-id="${f.id}" data-fix-name="${escapeHtml(f.name)}" aria-label="Delete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+              <button class="btn primary" data-run-fix-id="${f.id}" style="padding: 0.4rem 0.8rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Run Fix
+              </button>
             </div>
           </div>`,
         )
@@ -1498,36 +1519,6 @@ async function createProject(event) {
   }
 }
 
-async function createFix(event) {
-  event.preventDefault();
-  if (!state.selectedProject) {
-    showToast("Select a project first", "error");
-    return;
-  }
-
-  const payload = {
-    name: document.getElementById("fixName").value.trim(),
-    type: document.getElementById("fixType").value,
-    script_path: document.getElementById("fixScriptPath").value.trim(),
-    timeout_sec: Number(document.getElementById("fixTimeout").value),
-    supported_error_pattern: document.getElementById("fixPattern").value.trim(),
-  };
-
-  try {
-    await api(`/v1/projects/${state.selectedProject.id}/fixes`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-    el.fixForm.reset();
-    document.getElementById("fixType").value = "http";
-    document.getElementById("fixTimeout").value = "60";
-    await refreshSelectedProject();
-    showToast("Fix added");
-  } catch (err) {
-    showToast(err.message, "error");
-  }
-}
-
 async function uploadFix(event) {
   event.preventDefault();
   if (!state.selectedProject) {
@@ -1810,13 +1801,15 @@ function renderUptimeFixesWidget() {
     .map(
       (f) => `
       <div class="list-item">
-        <div class="main">
-          <strong>${escapeHtml(f.name)}</strong>
-          <span class="meta">${escapeHtml(f.type)} | ${escapeHtml(f.script_path)}</span>
-          <span class="meta">pattern: ${escapeHtml(clampText(f.supported_error_pattern, 80))}</span>
+        <div class="main" style="gap:0.1rem;">
+          <strong style="font-size:1rem;">${escapeHtml(f.name)}</strong>
+          <span class="meta">Type: ${escapeHtml(f.type.toUpperCase())} &nbsp;&bull;&nbsp; Timeout: ${f.timeout_sec}s</span>
         </div>
         <div class="inline-actions">
-          <button class="btn secondary" data-run-fix-id="${f.id}">Run</button>
+          <button class="btn primary" data-run-fix-id="${f.id}" style="padding: 0.4rem 0.8rem;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Run Fix
+          </button>
         </div>
       </div>`,
     )
@@ -1828,10 +1821,10 @@ function applyTemplate(idx) {
   if (!tpl) return;
 
   if (state.patternTarget && state.patternTarget instanceof HTMLInputElement) {
-    state.patternTarget.value = tpl.value;
-  } else {
-    el.fixPattern.value = tpl.value;
-    el.uploadFixPattern.value = tpl.value;
+    if (el.uploadFixPattern) el.uploadFixPattern.value = tpl.value;
+    if (el.editFixPattern && !el.editFixModal.classList.contains("hidden")) {
+      el.editFixPattern.value = tpl.value;
+    }
   }
   showToast(`Template applied: ${tpl.label}`);
 }
@@ -1843,7 +1836,7 @@ function toggleCreatePanel(show) {
 }
 
 function bindPatternInputs() {
-  [el.fixPattern, el.uploadFixPattern, el.editFixPattern].forEach((input) => {
+  [el.uploadFixPattern, el.editFixPattern].forEach((input) => {
     if (!input) return;
     input.addEventListener("focus", () => {
       state.patternTarget = input;
@@ -1934,7 +1927,6 @@ function attachEvents() {
   if (el.deleteProjectBtn)
     el.deleteProjectBtn.addEventListener("click", deleteProject);
 
-  if (el.fixForm) el.fixForm.addEventListener("submit", createFix);
   if (el.fixUploadForm) el.fixUploadForm.addEventListener("submit", uploadFix);
 
   // Sub-tabs
@@ -1963,9 +1955,19 @@ function attachEvents() {
 
   // Sidebar toggle
   if (el.closeSidebarBtn)
-    el.closeSidebarBtn.addEventListener("click", () => toggleSidebar(false));
-  if (el.openSidebarBtn)
-    el.openSidebarBtn.addEventListener("click", () => toggleSidebar(true));
+    el.closeSidebarBtn.addEventListener("click", () => {
+      const isCollapsed = el.sidebar.classList.contains("collapsed");
+      toggleSidebar(isCollapsed);
+    });
+
+  // Uptime widget click -> navigate to Uptime view
+  const uptimeWidget = document.getElementById("uptimeWidget");
+  if (uptimeWidget) {
+    uptimeWidget.addEventListener("click", () => selectView("uptimeView"));
+    uptimeWidget.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") selectView("uptimeView");
+    });
+  }
 
   if (el.fixesList) {
     el.fixesList.addEventListener("click", async (event) => {
@@ -2402,7 +2404,7 @@ async function loadCurrentUser() {
 }
 
 async function boot() {
-  renderTemplateButtons();
+  populateTemplateDropdowns();
   setRange("1h");
   bindAuthEvents();
 
