@@ -287,28 +287,26 @@
               <p class="muted">Autofix Configuration</p>
               <h2>Fixes Management</h2>
             </div>
+            <div class="inline-metrics">
+              <span class="inline-metric"><strong id="metricFixes">0</strong> scripts</span>
+              <span class="inline-metric-sep">|</span>
+              <span class="inline-metric">autofix <strong id="metricFixAutofix">Off</strong></span>
+            </div>
           </div>
 
-          <div class="metric-grid fixes-top-metrics">
-            <article class="metric-card">
-              <div class="metric-icon-wrap brand">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-              </div>
-              <div>
-                <p class="metric-label">Attached Fixes</p>
-                <p id="metricFixes" class="metric-value">0</p>
-              </div>
-            </article>
-            <article class="metric-card">
-              <div class="metric-icon-wrap info">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-              </div>
-              <div>
-                <p class="metric-label">Autofix Status</p>
-                <p id="metricFixAutofix" class="metric-value">Off</p>
-              </div>
-            </article>
-          </div>
+          <nav class="sub-tabs" id="fixesSubTabs">
+            <button class="sub-tab active" data-subtab="fixScriptsPane">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+              Scripts
+            </button>
+            <button class="sub-tab" data-subtab="fixRunsPane">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+              Runs
+              <span id="fixRunsCount" class="sub-tab-badge hidden">0</span>
+            </button>
+          </nav>
+
+          <div id="fixScriptsPane" class="sub-tab-pane active">
 
           <article class="panel-card">
             <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> Error Pattern Templates</h3>
@@ -415,7 +413,34 @@
               <div id="fixesList" class="list"></div>
             </div>
           </div>
+          </div><!-- end fixScriptsPane -->
+
+          <div id="fixRunsPane" class="sub-tab-pane">
+          <article class="panel-card fix-runs-panel">
+            <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg> Fix Runs <span class="muted" style="font-weight:400;font-size:0.82rem">(past 3 days)</span></h3>
+            <div id="fixRunsList" class="fix-runs-list"></div>
+          </article>
+          </div><!-- end fixRunsPane -->
         </section>
+
+        <div id="fixRunDetailModal" class="modal-overlay hidden">
+          <div class="modal-container modal-large">
+            <div class="modal-header">
+              <div>
+                <p class="muted">Fix Execution</p>
+                <h2>Run Details</h2>
+              </div>
+              <button
+                id="closeFixRunDetailX"
+                class="btn ghost modal-close-btn"
+                aria-label="Close run detail"
+              >
+                &times;
+              </button>
+            </div>
+            <div class="modal-body" id="fixRunDetailBody"></div>
+          </div>
+        </div>
 
         <div id="settingsModal" class="modal-overlay hidden">
           <div class="modal-container modal-large">
@@ -606,7 +631,7 @@
           <div class="view-header">
             <div>
               <p class="muted">Uptime Overview</p>
-              <h2>Comprehensive Health Timeline</h2>
+              <h2>Health Timeline</h2>
             </div>
             <div class="range-buttons" id="rangeButtons">
               <button class="btn secondary range-btn active" data-range="1h">
@@ -627,78 +652,95 @@
             </div>
           </div>
 
-          <div class="metric-grid">
-            <article class="metric-card">
-              <div class="metric-icon-wrap brand">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <nav class="sub-tabs" id="uptimeSubTabs">
+            <button class="sub-tab active" data-subtab="uptimeTimelinePane">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+              Timeline
+            </button>
+            <button class="sub-tab" data-subtab="uptimeLogsPane">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+              Logs & Events
+            </button>
+          </nav>
+
+          <!-- Timeline Sub-Tab -->
+          <div id="uptimeTimelinePane" class="sub-tab-pane active">
+            <div class="metric-grid">
+              <article class="metric-card">
+                <div class="metric-icon-wrap brand">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </div>
+                <div>
+                  <p class="metric-label">Window Uptime</p>
+                  <p id="uptimeRecent" class="metric-value">0%</p>
+                </div>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon-wrap info">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                </div>
+                <div>
+                  <p class="metric-label">Data Coverage</p>
+                  <p id="uptimeTotal" class="metric-value">0%</p>
+                </div>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon-wrap ok">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <p class="metric-label">Up Time (sec)</p>
+                  <p id="healthyRuns" class="metric-value">0</p>
+                </div>
+              </article>
+              <article class="metric-card">
+                <div class="metric-icon-wrap error">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+                </div>
+                <div>
+                  <p class="metric-label">Down Time (sec)</p>
+                  <p id="failedRuns" class="metric-value">0</p>
+                </div>
+              </article>
+            </div>
+
+            <article class="panel-card uptime-focused">
+              <div class="panel-card-header-flex">
+                <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> Status Timeline</h3>
+                <p class="muted">Green = up, RED = down, BLANK = no data.</p>
               </div>
-              <div>
-                <p class="metric-label">Window Uptime</p>
-                <p id="uptimeRecent" class="metric-value">0%</p>
-              </div>
-            </article>
-            <article class="metric-card">
-              <div class="metric-icon-wrap info">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
-              </div>
-              <div>
-                <p class="metric-label">Data Coverage</p>
-                <p id="uptimeTotal" class="metric-value">0%</p>
-              </div>
-            </article>
-            <article class="metric-card">
-              <div class="metric-icon-wrap ok">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </div>
-              <div>
-                <p class="metric-label">Up Time (sec)</p>
-                <p id="healthyRuns" class="metric-value">0</p>
-              </div>
-            </article>
-            <article class="metric-card">
-              <div class="metric-icon-wrap error">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
-              </div>
-              <div>
-                <p class="metric-label">Down Time (sec)</p>
-                <p id="failedRuns" class="metric-value">0</p>
+              <div id="uptimeCanvasWrap" class="uptime-canvas-wrap">
+                <canvas
+                  id="uptimeCanvas"
+                  class="uptime-canvas"
+                  width="1200"
+                  height="280"
+                ></canvas>
+                <div id="uptimeTooltip" class="uptime-tooltip hidden"></div>
               </div>
             </article>
           </div>
 
-          <article class="panel-card uptime-focused">
-            <div class="panel-card-header-flex">
-              <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> Status Timeline</h3>
-              <p class="muted">Green = up, RED = down, BLANK = no data.</p>
-            </div>
-            <div id="uptimeCanvasWrap" class="uptime-canvas-wrap">
-              <canvas
-                id="uptimeCanvas"
-                class="uptime-canvas"
-                width="1200"
-                height="280"
-              ></canvas>
-              <div id="uptimeTooltip" class="uptime-tooltip hidden"></div>
-            </div>
-          </article>
+          <!-- Logs & Events Sub-Tab -->
+          <div id="uptimeLogsPane" class="sub-tab-pane">
+            <div class="panel-grid panel-grid-two">
+              <article class="panel-card">
+                <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Recent Check Runs</h3>
+                <div id="runsList" class="list mono"></div>
+              </article>
 
-          <div class="panel-grid panel-grid-two">
-            <article class="panel-card">
-              <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Recent Check Runs</h3>
-              <div id="runsList" class="list mono"></div>
-            </article>
+              <article class="panel-card">
+                <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg> Live Logs</h3>
+                <div id="logsList" class="list mono"></div>
+              </article>
+            </div>
 
-            <article class="panel-card">
-              <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg> Live Logs</h3>
-              <div id="logsList" class="list mono"></div>
+            <article class="panel-card compact-mt">
+              <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Quick Fixes</h3>
+              <p class="muted">Run an attached fix script directly.</p>
+              <div id="uptimeFixesList" class="list"></div>
             </article>
           </div>
-
-          <article class="panel-card compact-mt">
-            <h3 class="panel-card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Quick Fixes</h3>
-            <p class="muted">Run an attached fix script directly.</p>
-            <div id="uptimeFixesList" class="list"></div>
-          </article>
         </section>
 
         <div id="editFixModal" class="modal-overlay hidden">

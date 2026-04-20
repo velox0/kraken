@@ -20,6 +20,7 @@ const state = {
     incidents: [],
     runs: [],
     fixes: [],
+    fixRuns: [],
     uptime: null,
     pathHealth: [],
     pathRuns: [],
@@ -145,6 +146,10 @@ const el = {
   editFixDiscardBtn: document.getElementById("editFixDiscardBtn"),
   editFixSaveBtn: document.getElementById("editFixSaveBtn"),
   uptimeFixesList: document.getElementById("uptimeFixesList"),
+  fixRunsList: document.getElementById("fixRunsList"),
+  fixRunDetailModal: document.getElementById("fixRunDetailModal"),
+  fixRunDetailBody: document.getElementById("fixRunDetailBody"),
+  closeFixRunDetailX: document.getElementById("closeFixRunDetailX"),
 };
 
 function setCookie(name, value, days) {
@@ -1319,13 +1324,14 @@ async function refreshSelectedProject() {
 
   const projectID = state.selectedProject.id;
   try {
-    const [checks, logs, incidents, runs, fixes, uptime, pathHealth] =
+    const [checks, logs, incidents, runs, fixes, fixRuns, uptime, pathHealth] =
       await Promise.all([
         api(`/v1/projects/${projectID}/checks`),
         api(`/v1/projects/${projectID}/logs?limit=220`),
         api(`/v1/projects/${projectID}/incidents?limit=80`),
         api(`/v1/projects/${projectID}/check-runs?limit=300`),
         api(`/v1/projects/${projectID}/fixes`),
+        api(`/v1/projects/${projectID}/fix-runs?limit=50`),
         api(
           `/v1/projects/${projectID}/uptime?window=${encodeURIComponent(state.activeWindow)}`,
         ),
@@ -1354,6 +1360,7 @@ async function refreshSelectedProject() {
       incidents: incidents || [],
       runs: runs || [],
       fixes: fixes || [],
+      fixRuns: fixRuns || [],
       uptime: uptime || null,
       pathHealth: pathHealth || [],
       pathRuns: pathRuns || [],
@@ -1363,6 +1370,7 @@ async function refreshSelectedProject() {
     renderDashboard();
     renderPathHealthPanel();
     renderUptimePanel();
+    renderFixRuns();
     el.lastUpdatedText.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
     setLiveState("ok");
     setBanner("");
@@ -1644,6 +1652,153 @@ async function deleteFix(fixID, fixName) {
   }
 }
 
+// ---------- Sub-Tab Switching ----------
+
+function initSubTabs(containerEl) {
+  if (!containerEl) return;
+  const tabs = containerEl.querySelectorAll(".sub-tab");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const paneId = tab.dataset.subtab;
+      if (!paneId) return;
+      // Deactivate siblings
+      tabs.forEach((t) => t.classList.remove("active"));
+      const section = containerEl.closest(".view") || containerEl.parentElement;
+      section.querySelectorAll(".sub-tab-pane").forEach((p) => p.classList.remove("active"));
+      // Activate clicked
+      tab.classList.add("active");
+      const target = document.getElementById(paneId);
+      if (target) target.classList.add("active");
+    });
+  });
+}
+
+// ---------- Fix Runs (GitHub Actions-style) ----------
+
+function fixRunStatusIcon(status) {
+  if (status === "success") return `<svg class="fix-run-icon success" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  if (status === "failure") return `<svg class="fix-run-icon failure" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+  return `<svg class="fix-run-icon running" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+}
+
+function formatDuration(ms) {
+  if (ms == null) return "-";
+  if (ms < 1000) return `${ms}ms`;
+  const sec = (ms / 1000).toFixed(1);
+  return `${sec}s`;
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return "";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const days = Math.floor(hr / 24);
+  return `${days}d ago`;
+}
+
+function renderFixRuns() {
+  if (!el.fixRunsList) return;
+  const runs = state.data.fixRuns || [];
+
+  // Update badge count
+  const badge = document.getElementById("fixRunsCount");
+  if (badge) {
+    if (runs.length > 0) {
+      badge.textContent = String(runs.length);
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  }
+
+  if (!state.selectedProject || runs.length === 0) {
+    el.fixRunsList.innerHTML = `<div class="fix-run-empty">No fix runs in the past 3 days</div>`;
+    return;
+  }
+
+  el.fixRunsList.innerHTML = runs
+    .map(
+      (r) => `
+      <button class="fix-run-row" data-fix-run-id="${r.id}">
+        <div class="fix-run-status">${fixRunStatusIcon(r.status)}</div>
+        <div class="fix-run-info">
+          <div class="fix-run-title">${escapeHtml(r.fix_name)}</div>
+          <div class="fix-run-meta">
+            <span class="fix-run-trigger ${r.trigger}">${r.trigger}</span>
+            ${r.requested_by ? `<span>by ${escapeHtml(r.requested_by)}</span>` : ""}
+            <span>${timeAgo(r.started_at)}</span>
+          </div>
+        </div>
+        <div class="fix-run-stats">
+          <span class="fix-run-duration">${formatDuration(r.duration_ms)}</span>
+          ${r.exit_code != null ? `<span class="fix-run-exit ${r.exit_code === 0 ? "ok" : "err"}">exit ${r.exit_code}</span>` : ""}
+        </div>
+      </button>`,
+    )
+    .join("");
+}
+
+async function openFixRunDetail(runID) {
+  if (!state.selectedProject) return;
+  try {
+    const run = await api(
+      `/v1/projects/${state.selectedProject.id}/fix-runs/${runID}`,
+    );
+    if (!run) {
+      showToast("Fix run not found", "error");
+      return;
+    }
+    showFixRunDetailModal(run);
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+
+function showFixRunDetailModal(run) {
+  if (!el.fixRunDetailModal || !el.fixRunDetailBody) return;
+
+  const statusClass =
+    run.status === "success"
+      ? "success"
+      : run.status === "failure"
+        ? "failure"
+        : "running";
+
+  el.fixRunDetailBody.innerHTML = `
+    <div class="fix-run-detail-header">
+      <div class="fix-run-detail-status ${statusClass}">
+        ${fixRunStatusIcon(run.status)}
+        <span>${run.status.toUpperCase()}</span>
+      </div>
+      <h3>${escapeHtml(run.fix_name)}</h3>
+    </div>
+    <div class="fix-run-detail-grid">
+      <div class="fix-run-detail-item"><span class="label">Trigger</span><span class="value">${escapeHtml(run.trigger)}</span></div>
+      <div class="fix-run-detail-item"><span class="label">Requested By</span><span class="value">${escapeHtml(run.requested_by || "-")}</span></div>
+      <div class="fix-run-detail-item"><span class="label">Script</span><span class="value mono">${escapeHtml(run.script_path)}</span></div>
+      <div class="fix-run-detail-item"><span class="label">Duration</span><span class="value">${formatDuration(run.duration_ms)}</span></div>
+      <div class="fix-run-detail-item"><span class="label">Exit Code</span><span class="value fix-run-exit ${run.exit_code === 0 ? "ok" : run.exit_code != null ? "err" : ""}">${run.exit_code != null ? run.exit_code : "-"}</span></div>
+      <div class="fix-run-detail-item"><span class="label">Started</span><span class="value">${fmt(run.started_at)}</span></div>
+      <div class="fix-run-detail-item"><span class="label">Finished</span><span class="value">${run.finished_at ? fmt(run.finished_at) : "—"}</span></div>
+    </div>
+    <div class="fix-run-output-section">
+      <h4>Output</h4>
+      <pre class="fix-run-output">${run.output ? escapeHtml(run.output) : "(no output)"}</pre>
+    </div>
+  `;
+
+  el.fixRunDetailModal.classList.remove("hidden");
+}
+
+function closeFixRunDetailModal() {
+  if (el.fixRunDetailModal) el.fixRunDetailModal.classList.add("hidden");
+}
+
 function renderUptimeFixesWidget() {
   if (!el.uptimeFixesList) return;
   const fixes = state.data.fixes || [];
@@ -1782,6 +1937,10 @@ function attachEvents() {
   if (el.fixForm) el.fixForm.addEventListener("submit", createFix);
   if (el.fixUploadForm) el.fixUploadForm.addEventListener("submit", uploadFix);
 
+  // Sub-tabs
+  initSubTabs(document.getElementById("fixesSubTabs"));
+  initSubTabs(document.getElementById("uptimeSubTabs"));
+
   // Settings modal
   if (el.openSettingsBtn)
     el.openSettingsBtn.addEventListener("click", openSettingsModal);
@@ -1836,6 +1995,24 @@ function attachEvents() {
       const runBtn = event.target.closest("button[data-run-fix-id]");
       if (!runBtn) return;
       await runFix(Number(runBtn.dataset.runFixId));
+    });
+  }
+
+  // Fix Runs list click -> open detail
+  if (el.fixRunsList) {
+    el.fixRunsList.addEventListener("click", async (event) => {
+      const row = event.target.closest("button[data-fix-run-id]");
+      if (!row) return;
+      await openFixRunDetail(Number(row.dataset.fixRunId));
+    });
+  }
+
+  // Fix Run Detail modal
+  if (el.closeFixRunDetailX)
+    el.closeFixRunDetailX.addEventListener("click", closeFixRunDetailModal);
+  if (el.fixRunDetailModal) {
+    el.fixRunDetailModal.addEventListener("click", (event) => {
+      if (event.target === el.fixRunDetailModal) closeFixRunDetailModal();
     });
   }
 

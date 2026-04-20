@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os/exec"
 	"time"
 
 	"kraken/internal/autofix"
@@ -99,19 +100,46 @@ func (w *Worker) handleFixJob(ctx context.Context, job queue.FixJob) {
 		return
 	}
 
+	// Record fix run as "running"
+	fixIDPtr := &fix.ID
+	runID, insertErr := w.Store.InsertFixRun(ctx, job.ProjectID, fixIDPtr, fix.Name, fix.ScriptPath, "manual", job.RequestedBy)
+	if insertErr != nil {
+		w.Log.Printf("insert fix run failed: %v", insertErr)
+	}
+
 	_ = w.Store.InsertLog(ctx, job.ProjectID, "warn", fmt.Sprintf("manual fix triggered: %s by %s", fix.Name, job.RequestedBy))
+
+	started := time.Now()
 	result, execErr := w.AutofixEngine.Execute(ctx, autofix.FixDefinition{
 		Name:       fix.Name,
 		ScriptPath: fix.ScriptPath,
 		TimeoutSec: fix.TimeoutSec,
 	})
+	durationMs := int(time.Since(started).Milliseconds())
+
+	exitCode := 0
 	if execErr != nil {
+		exitCode = 1
+		// Try to extract real exit code
+		if exitErr, ok := execErr.(*exec.ExitError); ok {
+			exitCode = exitErr.ExitCode()
+		}
+
 		w.Log.Printf("manual fix failed project=%d fix=%d: %v", job.ProjectID, job.FixID, execErr)
 		_ = w.Store.InsertLog(ctx, job.ProjectID, "error", fmt.Sprintf("manual fix %s failed: %s", fix.Name, result.Output))
+
+		if runID > 0 {
+			_ = w.Store.UpdateFixRunResult(ctx, runID, false, exitCode, result.Output, durationMs)
+		}
 		return
 	}
+
 	w.Log.Printf("manual fix succeeded project=%d fix=%d", job.ProjectID, job.FixID)
 	_ = w.Store.InsertLog(ctx, job.ProjectID, "warn", fmt.Sprintf("manual fix %s succeeded: %s", fix.Name, result.Output))
+
+	if runID > 0 {
+		_ = w.Store.UpdateFixRunResult(ctx, runID, true, 0, result.Output, durationMs)
+	}
 }
 
 func (w *Worker) Validate() error {

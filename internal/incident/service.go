@@ -190,16 +190,33 @@ func (s *Service) runAutofix(ctx context.Context, check db.CheckContext, errMess
 		return "not_found"
 	}
 
+	// Record fix run as "running"
+	fixIDPtr := &fix.ID
+	runID, insertErr := s.store.InsertFixRun(ctx, check.ProjectID, fixIDPtr, fix.Name, fix.ScriptPath, "autofix", "system")
+	if insertErr != nil {
+		_ = s.store.InsertLog(ctx, check.ProjectID, "error", "failed to record fix run: "+insertErr.Error())
+	}
+
+	started := time.Now()
 	result, execErr := s.autofixEngine.Execute(ctx, autofix.FixDefinition{
 		Name:       fix.Name,
 		ScriptPath: fix.ScriptPath,
 		TimeoutSec: fix.TimeoutSec,
 	})
+	durationMs := int(time.Since(started).Milliseconds())
+
 	if execErr != nil {
 		_ = s.store.InsertLog(ctx, check.ProjectID, "error", fmt.Sprintf("autofix %q failed: %s", fix.Name, result.Output))
+		if runID > 0 {
+			exitCode := 1
+			_ = s.store.UpdateFixRunResult(ctx, runID, false, exitCode, result.Output, durationMs)
+		}
 		return "failed"
 	}
 	_ = s.store.InsertLog(ctx, check.ProjectID, "warn", fmt.Sprintf("autofix %q succeeded: %s", fix.Name, result.Output))
+	if runID > 0 {
+		_ = s.store.UpdateFixRunResult(ctx, runID, true, 0, result.Output, durationMs)
+	}
 	return "success"
 }
 

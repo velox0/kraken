@@ -87,6 +87,8 @@ func (h *Handler) Router() http.Handler {
 			r.With(RequireScope("fixes:write")).Put("/projects/{projectID}/fixes/{fixID}", h.updateProjectFix)
 			r.With(RequireScope("fixes:delete")).Delete("/projects/{projectID}/fixes/{fixID}", h.deleteProjectFix)
 			r.With(RequireScope("fixes:run")).Post("/projects/{projectID}/fixes/{fixID}/run", h.runProjectFix)
+			r.With(RequireScope("fixes:read")).Get("/projects/{projectID}/fix-runs", h.listFixRuns)
+			r.With(RequireScope("fixes:read")).Get("/projects/{projectID}/fix-runs/{runID}", h.getFixRun)
 			r.With(RequireScope("smtp_profiles:read")).Get("/smtp_profiles", h.listSMTPProfiles)
 			r.With(RequireScope("smtp_profiles:write")).Post("/smtp_profiles", h.createSMTPProfile)
 		})
@@ -830,6 +832,43 @@ type createSMTPProfileRequest struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	FromEmail string `json:"from_email"`
+}
+
+func (h *Handler) listFixRuns(w http.ResponseWriter, r *http.Request) {
+	projectID, err := parseIDParam(r, "projectID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	runs, err := h.store.ListFixRunsByProject(r.Context(), projectID, parseLimit(r, 50))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, runs)
+}
+
+func (h *Handler) getFixRun(w http.ResponseWriter, r *http.Request) {
+	projectID, err := parseIDParam(r, "projectID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	runID, err := parseIDParam(r, "runID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	run, err := h.store.GetFixRun(r.Context(), projectID, runID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if run == nil {
+		writeError(w, http.StatusNotFound, errors.New("fix run not found"))
+		return
+	}
+	writeJSON(w, http.StatusOK, run)
 }
 
 func (h *Handler) createSMTPProfile(w http.ResponseWriter, r *http.Request) {
