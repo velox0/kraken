@@ -25,5 +25,52 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    image: postgres:16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: postgres
+    volumes:
+      - ./db/migrations:/migrations:ro
+    command:
+      - sh
+      - -ec
+      - |
+        for f in /migrations/*.sql; do
+          echo "Applying migration: $$f"
+          psql -h postgres -U postgres -d kraken -f "$$f"
+        done
+    restart: "no"
+
+  kraken:
+    image: kraken:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      API_ADDR: :8080
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/kraken?sslmode=disable
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: "0"
+      FIX_SCRIPTS_DIR: /app/scripts/fixes
+      ALLOWED_FIX_COMMANDS: bash
+      APP_ENV: docker
+      ADMIN_BOOTSTRAP: "true"
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin
+      ADMIN_NAME: Admin
+    ports:
+      - "8080:8080"
+
 volumes:
   pgdata:
