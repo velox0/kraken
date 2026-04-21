@@ -103,13 +103,6 @@ for f in db/migrations/*.sql; do
   run_sql_file "$f"
 done
 
-# ── Seeds ────────────────────────────────────────────────────────────
-info "Running seeds..."
-for f in db/seeds/*.sql; do
-  warn "$(basename "$f")"
-  run_sql_file "$f"
-done
-
 # ── Done ─────────────────────────────────────────────────────────────
 echo ""
 info "Setup complete!"

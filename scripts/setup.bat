@@ -61,13 +61,6 @@ for %%f in (db\migrations\*.sql) do (
     )
 )
 
-REM ── Seeds ───────────────────────────────────────────────────────────
-echo ==^> Running seeds...
-for %%f in (db\seeds\*.sql) do (
-    echo     %%~nxf
-    docker exec -i %PG_CONTAINER% psql -U postgres -d kraken < "%%f"
-)
-
 REM ── Done ────────────────────────────────────────────────────────────
 echo.
 echo ==^> Setup complete!
