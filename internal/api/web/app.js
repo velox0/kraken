@@ -734,8 +734,12 @@ function renderUptimeCanvas() {
     const h = chartH - (y - padY);
 
     // Use new theme colors with high contrast
-    let color = "rgba(16, 185, 129, 0.9)"; // --ok color
-    if (p.down_seconds > 0) color = "rgba(239, 68, 68, 0.9)"; // --error color
+    let color = "rgba(16, 185, 129, 0.9)"; // 100% uptime green
+    if (ratio < 1) {
+      // Map ratio (0 to nearly 1) to Hue (0=red to 55=yellow)
+      const hue = Math.floor(ratio * 55);
+      color = `hsla(${hue}, 85%, 55%, 0.9)`;
+    }
 
     const roundedX = Math.floor(x);
     const roundedY = Math.floor(y);
