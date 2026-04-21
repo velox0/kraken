@@ -23,7 +23,7 @@ where docker >nul 2>&1 || (
 
 REM ── Start containers ────────────────────────────────────────────────
 echo ==^> Starting Docker containers...
-docker compose up -d
+docker compose up -d postgres redis
 if errorlevel 1 (
     echo ERROR: docker compose failed
     exit /b 1

@@ -59,7 +59,7 @@ case "$CHOICE" in
     # ── Docker (default) ─────────────────────────────────────────────
     info "Using Docker"
     command -v docker >/dev/null 2>&1 || fail "docker not found. Install Docker first: https://docs.docker.com/get-docker"
-    docker compose up -d
+    docker compose up -d postgres redis
     info "Waiting for containers..."
     sleep 3
     ;;

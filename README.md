@@ -33,7 +33,20 @@ Kraken is a project-based uptime monitor with queue-driven checks, incidents, SM
 
 ## Quick Start
 
-### Option A: Automated setup
+### Option A: Docker setup
+
+**all platforms**
+
+> ### admin config
+>
+> Admin credentials are passed as env keys is [docker-compose.yml](./docker-compose.yml#L69)
+
+```bash
+docker build -t kraken:latest . # create the kraken image
+docker compose up -d            # start the app
+```
+
+### Option B: Automated setup
 
 **macOS / Linux:**
 
@@ -51,7 +64,7 @@ scripts\setup.bat
 
 Uses Docker for everything.
 
-### Option B: Manual setup
+### Option C: Manual setup
 
 1. **Start Postgres + Redis:**
 
@@ -131,7 +144,7 @@ Kraken includes a built-in authentication system with role-based access control 
 
 - **Scopes & Roles:** Users can be granted specific scopes (e.g., `projects:read`, `fixes:write`) and are assigned a `role_level` (0 is highest). The `admin` scope grants full access. Admins can only manage users with a numerically higher (lower privilege) role level.
 - **Admin Panel:** Users with the `users:manage` or `admin` scope can access the User Management panel in the web UI to create, edit, delete, and unfreeze users.
-- **Security:** 
+- **Security:**
   - Login attempts have a random delay (200-800ms) to prevent timing attacks.
   - Accounts are frozen after 5 consecutive failed login attempts.
 - **CLI Management:** The `useradmin` CLI tool is used to manage super-admin accounts directly via the database, bypassing the web UI.
@@ -139,16 +152,19 @@ Kraken includes a built-in authentication system with role-based access control 
 ### CLI Tool Usage
 
 Create or update a super-admin user (role level 0, all scopes):
+
 ```bash
 make useradmin ARGS="create --email admin@example.com --password mysecret22 --name Admin"
 ```
 
 Change an existing user's password:
+
 ```bash
 make useradmin ARGS="passwd --email admin@example.com --password newpass"
 ```
 
 View user information:
+
 ```bash
 make useradmin ARGS="info --email admin@example.com"
 ```
@@ -186,71 +202,6 @@ make useradmin ARGS="info --email admin@example.com"
 | `EMAIL_PASS`           |                                                                      | SMTP password                                                 |
 | `EMAIL_FROM`           | `EMAIL_USER`                                                         | Default sender email                                          |
 | `ADMIN_CONTACT_EMAIL`  |                                                                      | Email to display when a user's account is locked out          |
-
----
-
-## Core API
-
-### System
-
-| Method | Endpoint   | Description  |
-| ------ | ---------- | ------------ |
-| GET    | `/healthz` | Health check |
-
-### Projects
-
-| Method | Endpoint                   | Description                        |
-| ------ | -------------------------- | ---------------------------------- |
-| GET    | `/v1/projects`             | List projects                      |
-| POST   | `/v1/projects`             | Create project                     |
-| GET    | `/v1/projects/{projectID}` | Get project                        |
-| PATCH  | `/v1/projects/{projectID}` | Update project (settings, autofix) |
-| DELETE | `/v1/projects/{projectID}` | Delete project                     |
-
-### Checks
-
-| Method | Endpoint                          | Description          |
-| ------ | --------------------------------- | -------------------- |
-| GET    | `/v1/projects/{projectID}/checks` | List checks          |
-| POST   | `/v1/projects/{projectID}/checks` | Create check         |
-| GET    | `/v1/checks/{checkID}/runs`       | Get runs for a check |
-
-### Monitoring
-
-| Method | Endpoint                           | Description                |
-| ------ | ---------------------------------- | -------------------------- |
-| GET    | `/v1/projects/{projectID}/metrics` | Uptime, health, aggregates |
-| GET    | `/v1/projects/{projectID}/events`  | Logs and incidents         |
-| POST   | `/v1/projects/{projectID}/run`     | Trigger immediate check    |
-
-### Fixes
-
-| Method | Endpoint                                 | Description             |
-| ------ | ---------------------------------------- | ----------------------- |
-| GET    | `/v1/projects/{projectID}/fixes`         | List fixes              |
-| POST   | `/v1/projects/{projectID}/fixes`         | Create fix              |
-| PATCH  | `/v1/projects/{projectID}/fixes/{fixID}` | Update fix              |
-| DELETE | `/v1/projects/{projectID}/fixes/{fixID}` | Delete fix              |
-| POST   | `/v1/fixes/upload`                       | Upload `.sh`/`.bat`/`.cmd` fix script |
-| POST   | `/v1/fixes/{fixID}/run`                  | Run fix manually        |
-
-### SMTP Profiles
-
-| Method | Endpoint            | Description         |
-| ------ | ------------------- | ------------------- |
-| GET    | `/v1/smtp_profiles` | List SMTP profiles  |
-| POST   | `/v1/smtp_profiles` | Create SMTP profile |
-
-Alert routing order:
-- Project SMTP profile (if selected in project settings)
-- Env default SMTP (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`)
-
-Per-project email templates:
-- Editable from Settings UI for: `opened`, `resolved`, `repeated`, and `autofix limit`.
-- Supported placeholders in subject/body:
-  `{project_name}`, `{domain}`, `{event}`, `{incident_id}`, `{timestamp}`,
-  `{error}`, `{autofix_status}`, `{check_id}`, `{check_type}`, `{check_target}`,
-  `{autofix_attempts}`, `{max_retries}`.
 
 ---
 
