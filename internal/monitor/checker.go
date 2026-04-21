@@ -61,7 +61,9 @@ func RunCheck(ctx context.Context, checkType, target string, timeoutMs int, asse
 	}
 
 	// If the transport itself failed (connection error, DNS, timeout), skip assertions.
+	// These are always critical – they should trigger incidents and autofix matching.
 	if result.ErrorMessage != "" && result.StatusCode == 0 {
+		result.CriticalFailure = true
 		return result
 	}
 

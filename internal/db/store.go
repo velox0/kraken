@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -1662,13 +1663,16 @@ func (s *Store) FindMatchingFix(ctx context.Context, projectID int64, checkType,
 	}
 	defer rows.Close()
 
+	candidates := 0
 	for rows.Next() {
 		var f Fix
 		if err := rows.Scan(&f.ID, &f.Name, &f.Type, &f.ScriptPath, &f.SupportedErrorPattern, &f.TimeoutSec); err != nil {
 			return nil, err
 		}
+		candidates++
 		matched, matchErr := regexp.MatchString(f.SupportedErrorPattern, errMessage)
 		if matchErr != nil {
+			log.Printf("[autofix] fix %d (%q) pattern %q regex error: %v", f.ID, f.Name, f.SupportedErrorPattern, matchErr)
 			continue
 		}
 		if matched {
@@ -1677,6 +1681,9 @@ func (s *Store) FindMatchingFix(ctx context.Context, projectID int64, checkType,
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if candidates == 0 {
+		log.Printf("[autofix] project %d: no candidate fixes found for checkType=%q (check project_fixes table)", projectID, checkType)
 	}
 	return nil, nil
 }

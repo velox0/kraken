@@ -180,6 +180,7 @@ func (s *Service) shouldSendAlert(existing *db.Incident, newlyOpened bool) bool 
 }
 
 func (s *Service) runAutofix(ctx context.Context, check db.CheckContext, errMessage string) string {
+	_ = s.store.InsertLog(ctx, check.ProjectID, "info", fmt.Sprintf("autofix: searching for fix matching type=%q err=%q", check.Type, truncateForLog(errMessage, 120)))
 	fix, err := s.store.FindMatchingFix(ctx, check.ProjectID, check.Type, errMessage)
 	if err != nil {
 		_ = s.store.InsertLog(ctx, check.ProjectID, "error", "autofix lookup failed: "+err.Error())
@@ -378,4 +379,11 @@ func (s *Service) sendAutofixExceededEmail(ctx context.Context, check db.CheckCo
 	} else {
 		_ = s.store.InsertLog(ctx, check.ProjectID, "warn", "autofix-exceeded email skipped (no smtp configured)")
 	}
+}
+
+func truncateForLog(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "…"
 }
