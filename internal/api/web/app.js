@@ -303,11 +303,9 @@ function renderProjectSelect() {
 
 function populateTemplateDropdowns() {
   const optionsHTML = errorTemplates
-    .map(
-      (tpl, i) => `<option value="${i}">${escapeHtml(tpl.label)}</option>`
-    )
+    .map((tpl, i) => `<option value="${i}">${escapeHtml(tpl.label)}</option>`)
     .join("");
-    
+
   if (el.uploadFixTemplate) {
     el.uploadFixTemplate.innerHTML += optionsHTML;
     el.uploadFixTemplate.addEventListener("change", (e) => {
@@ -877,20 +875,19 @@ function renderUptimePanel() {
   el.runsList.innerHTML = state.data.runs.length
     ? state.data.runs
         .slice(0, 120)
-        .map(
-          (r) => {
-            const cIdx = state.data.checks.findIndex(c => c.id === r.check_id) + 1;
-            const cLabel = cIdx > 0 ? `#${cIdx}` : `(deleted)`;
-            return `
+        .map((r) => {
+          const cIdx =
+            state.data.checks.findIndex((c) => c.id === r.check_id) + 1;
+          const cLabel = cIdx > 0 ? `#${cIdx}` : `(deleted)`;
+          return `
           <div class="list-item">
             <div class="main">
               <strong class="status-${r.status === "healthy" ? "ok" : "error"}">${escapeHtml(r.status.toUpperCase())}</strong>
               <span>check ${cLabel} | ${r.response_time_ms ?? "-"}ms${r.error_message ? ` | ${escapeHtml(clampText(r.error_message, 130))}` : ""}</span>
               <span class="meta">${fmt(r.created_at)}</span>
             </div>
-          </div>`
-          }
-        )
+          </div>`;
+        })
         .join("")
     : `<div class="list-item"><div class="main">No check runs yet</div></div>`;
 
@@ -929,14 +926,19 @@ function updateProjectInState(project) {
 }
 
 function summarizeAssertions(assertions) {
-  if (!Array.isArray(assertions) || assertions.length === 0) return "default (accept <400)";
-  return assertions.map(a => {
-    const crit = a.critical === false ? "⚠" : "🔴";
-    if (a.type === "status") return `${crit} status ${a.operator} ${a.value}`;
-    if (a.type === "body_regex") return `${crit} body ${a.operator} /${a.value}/`;
-    if (a.type === "response_time") return `${crit} time ${a.operator} ${a.value}ms`;
-    return `${crit} ${a.type} ${a.operator} ${a.value}`;
-  }).join("; ");
+  if (!Array.isArray(assertions) || assertions.length === 0)
+    return "default (accept <400)";
+  return assertions
+    .map((a) => {
+      const crit = a.critical === false ? "⚠" : "🔴";
+      if (a.type === "status") return `${crit} status ${a.operator} ${a.value}`;
+      if (a.type === "body_regex")
+        return `${crit} body ${a.operator} /${a.value}/`;
+      if (a.type === "response_time")
+        return `${crit} time ${a.operator} ${a.value}ms`;
+      return `${crit} ${a.type} ${a.operator} ${a.value}`;
+    })
+    .join("; ");
 }
 
 function renderAssertionRow(a = {}) {
@@ -981,7 +983,9 @@ function renderSettingsChecksRows(checks) {
         .map((check) => {
           const selectedType = (type) =>
             check.type === type ? "selected" : "";
-          const assertions = Array.isArray(check.assertions) ? check.assertions : [];
+          const assertions = Array.isArray(check.assertions)
+            ? check.assertions
+            : [];
           return `
             <div class="settings-check-row" data-check-id="${check.id || ""}">
               <div class="cell">
@@ -1003,7 +1007,7 @@ function renderSettingsChecksRows(checks) {
               <div class="cell cell-full">
                 <span class="label">Assertions <button type="button" class="btn secondary btn-sm" data-add-assertion="1">+ Add</button></span>
                 <div class="assertions-container">
-                  ${assertions.map(a => renderAssertionRow(a)).join("")}
+                  ${assertions.map((a) => renderAssertionRow(a)).join("")}
                 </div>
               </div>
               <div class="cell">
@@ -1021,7 +1025,9 @@ function addSettingsCheckRow(defaults = {}) {
   if (!el.settingsChecksRows) return;
   const selectedType = (type) =>
     (defaults.type || "http") === type ? "selected" : "";
-  const assertions = Array.isArray(defaults.assertions) ? defaults.assertions : [];
+  const assertions = Array.isArray(defaults.assertions)
+    ? defaults.assertions
+    : [];
   const row = document.createElement("div");
   row.className = "settings-check-row";
   row.dataset.checkId = defaults.id ? String(defaults.id) : "";
@@ -1045,7 +1051,7 @@ function addSettingsCheckRow(defaults = {}) {
     <div class="cell cell-full">
       <span class="label">Assertions <button type="button" class="btn secondary btn-sm" data-add-assertion="1">+ Add</button></span>
       <div class="assertions-container">
-        ${assertions.map(a => renderAssertionRow(a)).join("")}
+        ${assertions.map((a) => renderAssertionRow(a)).join("")}
       </div>
     </div>
     <div class="cell">
@@ -1094,28 +1100,33 @@ function renderSettingsForm() {
     ", ",
   );
   if (el.tplOpenedSubject) {
-    el.tplOpenedSubject.value = state.selectedProject.email_subject_opened || "";
+    el.tplOpenedSubject.value =
+      state.selectedProject.email_subject_opened || "";
   }
   if (el.tplOpenedBody) {
     el.tplOpenedBody.value = state.selectedProject.email_body_opened || "";
   }
   if (el.tplResolvedSubject) {
-    el.tplResolvedSubject.value = state.selectedProject.email_subject_resolved || "";
+    el.tplResolvedSubject.value =
+      state.selectedProject.email_subject_resolved || "";
   }
   if (el.tplResolvedBody) {
     el.tplResolvedBody.value = state.selectedProject.email_body_resolved || "";
   }
   if (el.tplRepeatedSubject) {
-    el.tplRepeatedSubject.value = state.selectedProject.email_subject_repeated || "";
+    el.tplRepeatedSubject.value =
+      state.selectedProject.email_subject_repeated || "";
   }
   if (el.tplRepeatedBody) {
     el.tplRepeatedBody.value = state.selectedProject.email_body_repeated || "";
   }
   if (el.tplAutofixSubject) {
-    el.tplAutofixSubject.value = state.selectedProject.email_subject_autofix_limit || "";
+    el.tplAutofixSubject.value =
+      state.selectedProject.email_subject_autofix_limit || "";
   }
   if (el.tplAutofixBody) {
-    el.tplAutofixBody.value = state.selectedProject.email_body_autofix_limit || "";
+    el.tplAutofixBody.value =
+      state.selectedProject.email_body_autofix_limit || "";
   }
 
   const smtpProfiles = state.data.smtpProfiles || [];
@@ -1154,7 +1165,10 @@ async function createSMTPProfileFromSettings() {
   const fromEmail = (el.smtpFrom?.value || "").trim();
 
   if (!host || !port || !username || !password || !fromEmail) {
-    showToast("SMTP host, port, user, pass and from email are required", "error");
+    showToast(
+      "SMTP host, port, user, pass and from email are required",
+      "error",
+    );
     return;
   }
 
@@ -1188,18 +1202,27 @@ async function createSMTPProfileFromSettings() {
 
 function collectAssertionsFromRow(checkRow) {
   const aRows = checkRow.querySelectorAll(".assertion-row");
-  return Array.from(aRows).map(ar => {
-    const isCritical = ar.querySelector('[data-assertion-field="critical"]')?.checked ?? true;
-    const a = {
-      type: ar.querySelector('[data-assertion-field="type"]')?.value || "status",
-      operator: ar.querySelector('[data-assertion-field="operator"]')?.value || "in",
-      value: (ar.querySelector('[data-assertion-field="value"]')?.value || "").trim(),
-    };
-    if (!isCritical) a.critical = false;
-    const onFail = (ar.querySelector('[data-assertion-field="on_fail"]')?.value || "").trim();
-    if (onFail) a.on_fail = onFail;
-    return a;
-  }).filter(a => a.value !== "");
+  return Array.from(aRows)
+    .map((ar) => {
+      const isCritical =
+        ar.querySelector('[data-assertion-field="critical"]')?.checked ?? true;
+      const a = {
+        type:
+          ar.querySelector('[data-assertion-field="type"]')?.value || "status",
+        operator:
+          ar.querySelector('[data-assertion-field="operator"]')?.value || "in",
+        value: (
+          ar.querySelector('[data-assertion-field="value"]')?.value || ""
+        ).trim(),
+      };
+      if (!isCritical) a.critical = false;
+      const onFail = (
+        ar.querySelector('[data-assertion-field="on_fail"]')?.value || ""
+      ).trim();
+      if (onFail) a.on_fail = onFail;
+      return a;
+    })
+    .filter((a) => a.value !== "");
 }
 
 function collectSettingsChecks() {
@@ -1355,20 +1378,29 @@ async function refreshSelectedProject() {
 
   const projectID = state.selectedProject.id;
   try {
-    const [checks, logs, incidents, runs, fixes, fixRuns, uptime, pathHealth, envVars] =
-      await Promise.all([
-        api(`/v1/projects/${projectID}/checks`),
-        api(`/v1/projects/${projectID}/logs?limit=220`),
-        api(`/v1/projects/${projectID}/incidents?limit=80`),
-        api(`/v1/projects/${projectID}/check-runs?limit=300`),
-        api(`/v1/projects/${projectID}/fixes`),
-        api(`/v1/projects/${projectID}/fix-runs?limit=50`),
-        api(
-          `/v1/projects/${projectID}/uptime?window=${encodeURIComponent(state.activeWindow)}`,
-        ),
-        api(`/v1/projects/${projectID}/routes/health`),
-        api(`/v1/projects/${projectID}/env-vars`),
-      ]);
+    const [
+      checks,
+      logs,
+      incidents,
+      runs,
+      fixes,
+      fixRuns,
+      uptime,
+      pathHealth,
+      envVars,
+    ] = await Promise.all([
+      api(`/v1/projects/${projectID}/checks`),
+      api(`/v1/projects/${projectID}/logs?limit=220`),
+      api(`/v1/projects/${projectID}/incidents?limit=80`),
+      api(`/v1/projects/${projectID}/check-runs?limit=300`),
+      api(`/v1/projects/${projectID}/fixes`),
+      api(`/v1/projects/${projectID}/fix-runs?limit=50`),
+      api(
+        `/v1/projects/${projectID}/uptime?window=${encodeURIComponent(state.activeWindow)}`,
+      ),
+      api(`/v1/projects/${projectID}/routes/health`),
+      api(`/v1/projects/${projectID}/env-vars`),
+    ]);
 
     if (!state.selectedProject || state.selectedProject.id !== projectID) {
       return;
@@ -1512,7 +1544,7 @@ async function createProject(event) {
           type: "http",
           target: normalizeTarget(domain, path),
           timeout_ms: 5000,
-          assertions: [{type: "status", operator: "in", value: "2xx"}],
+          assertions: [{ type: "status", operator: "in", value: "2xx" }],
         }),
       });
     }
@@ -1672,7 +1704,7 @@ function renderEnvVars() {
       <div class="list-item">
         <div class="main" style="gap:0.15rem;">
           <strong style="font-family:'JetBrains Mono',monospace; font-size:0.9rem;">${escapeHtml(v.name)}</strong>
-          <span class="meta" style="font-family:'JetBrains Mono',monospace;">${v.is_secret ? '<span style="color:var(--warn);">🔒 secret</span> &nbsp;' : ''}${escapeHtml(v.value)}</span>
+          <span class="meta" style="font-family:'JetBrains Mono',monospace;">${v.is_secret ? '<span style="color:var(--warn);">Secret</span> &nbsp;' : ""}${escapeHtml(v.value)}</span>
         </div>
         <div class="inline-actions">
           <button class="btn ghost" data-edit-env-name="${escapeHtml(v.name)}" data-edit-env-secret="${v.is_secret}">Edit</button>
@@ -1720,10 +1752,9 @@ async function deleteEnvVar(envVarID, envName) {
   if (!state.selectedProject) return;
   if (!confirm(`Delete environment variable "${envName}"?`)) return;
   try {
-    await api(
-      `/v1/projects/${state.selectedProject.id}/env-vars/${envVarID}`,
-      { method: "DELETE" },
-    );
+    await api(`/v1/projects/${state.selectedProject.id}/env-vars/${envVarID}`, {
+      method: "DELETE",
+    });
     showToast(`Variable ${envName} deleted`);
     await refreshSelectedProject();
   } catch (err) {
@@ -1756,7 +1787,9 @@ function initSubTabs(containerEl) {
       // Deactivate siblings
       tabs.forEach((t) => t.classList.remove("active"));
       const section = containerEl.closest(".view") || containerEl.parentElement;
-      section.querySelectorAll(".sub-tab-pane").forEach((p) => p.classList.remove("active"));
+      section
+        .querySelectorAll(".sub-tab-pane")
+        .forEach((p) => p.classList.remove("active"));
       // Activate clicked
       tab.classList.add("active");
       const target = document.getElementById(paneId);
@@ -1768,8 +1801,10 @@ function initSubTabs(containerEl) {
 // ---------- Fix Runs (GitHub Actions-style) ----------
 
 function fixRunStatusIcon(status) {
-  if (status === "success") return `<svg class="fix-run-icon success" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-  if (status === "failure") return `<svg class="fix-run-icon failure" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+  if (status === "success")
+    return `<svg class="fix-run-icon success" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  if (status === "failure")
+    return `<svg class="fix-run-icon failure" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
   return `<svg class="fix-run-icon running" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 }
 
@@ -2034,22 +2069,33 @@ function attachEvents() {
     el.envVarsList.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("button[data-edit-env-name]");
       if (editBtn) {
-        editEnvVar(editBtn.dataset.editEnvName, editBtn.dataset.editEnvSecret === "true");
+        editEnvVar(
+          editBtn.dataset.editEnvName,
+          editBtn.dataset.editEnvSecret === "true",
+        );
         return;
       }
       const deleteBtn = event.target.closest("button[data-delete-env-id]");
       if (deleteBtn) {
-        await deleteEnvVar(Number(deleteBtn.dataset.deleteEnvId), deleteBtn.dataset.envName || "");
+        await deleteEnvVar(
+          Number(deleteBtn.dataset.deleteEnvId),
+          deleteBtn.dataset.envName || "",
+        );
         return;
       }
     });
   }
 
   if (el.envVarIsSecret && el.envVarValue) {
-    el.envVarIsSecret.addEventListener("change", () => {
-      el.envVarValue.type = el.envVarIsSecret.checked ? "password" : "text";
-    });
-    el.envVarValue.type = el.envVarIsSecret.checked ? "password" : "text";
+    const toggleSecret = () => {
+      if (el.envVarIsSecret.checked) {
+        el.envVarValue.classList.add("secret-text");
+      } else {
+        el.envVarValue.classList.remove("secret-text");
+      }
+    };
+    el.envVarIsSecret.addEventListener("change", toggleSecret);
+    toggleSecret();
   }
 
   // Sub-tabs
@@ -2194,7 +2240,9 @@ function attachEvents() {
         if (row) row.remove();
         return;
       }
-      const addAssertionBtn = event.target.closest("button[data-add-assertion]");
+      const addAssertionBtn = event.target.closest(
+        "button[data-add-assertion]",
+      );
       if (addAssertionBtn) {
         const checkRow = addAssertionBtn.closest(".settings-check-row");
         if (checkRow) {
@@ -2207,7 +2255,9 @@ function attachEvents() {
         }
         return;
       }
-      const rmAssertionBtn = event.target.closest("button[data-remove-assertion]");
+      const rmAssertionBtn = event.target.closest(
+        "button[data-remove-assertion]",
+      );
       if (rmAssertionBtn) {
         const assertionRow = rmAssertionBtn.closest(".assertion-row");
         if (assertionRow) assertionRow.remove();
@@ -2292,7 +2342,7 @@ function bindAuthEvents() {
         const r = await fetch("/v1/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password }),
         });
         const data = await r.json().catch(() => null);
         if (!r.ok) {
@@ -2321,7 +2371,9 @@ function bindAuthEvents() {
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
-      try { await api("/v1/logout", { method: "POST" }); } catch(_){}
+      try {
+        await api("/v1/logout", { method: "POST" });
+      } catch (_) {}
       location.reload();
     });
   }
@@ -2342,37 +2394,56 @@ function bindAuthEvents() {
           method: "PUT",
           body: JSON.stringify({
             current_password: document.getElementById("cpCurrent").value,
-            new_password: document.getElementById("cpNew").value
-          })
+            new_password: document.getElementById("cpNew").value,
+          }),
         });
         document.getElementById("changePwModal").classList.add("hidden");
         changePwForm.reset();
         showToast("Password changed");
-      } catch (err) { showToast(err.message, "error"); }
+      } catch (err) {
+        showToast(err.message, "error");
+      }
     });
   }
 
   // ----- Admin Panel -----
   const ALL_SCOPES = [
-    "admin","users:manage",
-    "projects:read","projects:write","projects:delete","projects.autofix:write",
-    "checks:read","checks:write","checks:run","check_runs:read",
-    "logs:read","incidents:read","paths:read","uptime:read",
-    "fixes:read","fixes:write","fixes:delete","fixes:run",
-    "smtp_profiles:read","smtp_profiles:write"
+    "admin",
+    "users:manage",
+    "projects:read",
+    "projects:write",
+    "projects:delete",
+    "projects.autofix:write",
+    "checks:read",
+    "checks:write",
+    "checks:run",
+    "check_runs:read",
+    "logs:read",
+    "incidents:read",
+    "paths:read",
+    "uptime:read",
+    "fixes:read",
+    "fixes:write",
+    "fixes:delete",
+    "fixes:run",
+    "smtp_profiles:read",
+    "smtp_profiles:write",
   ];
 
   function renderScopeChips(container, selectedScopes) {
-    container.innerHTML = ALL_SCOPES.map(s =>
-      `<span class="scope-chip${selectedScopes.includes(s) ? ' active' : ''}" data-scope="${s}">${s}</span>`
+    container.innerHTML = ALL_SCOPES.map(
+      (s) =>
+        `<span class="scope-chip${selectedScopes.includes(s) ? " active" : ""}" data-scope="${s}">${s}</span>`,
     ).join("");
-    container.querySelectorAll(".scope-chip").forEach(chip => {
+    container.querySelectorAll(".scope-chip").forEach((chip) => {
       chip.addEventListener("click", () => chip.classList.toggle("active"));
     });
   }
 
   function getSelectedScopes(container) {
-    return Array.from(container.querySelectorAll(".scope-chip.active")).map(c => c.dataset.scope);
+    return Array.from(container.querySelectorAll(".scope-chip.active")).map(
+      (c) => c.dataset.scope,
+    );
   }
 
   const openCreateUserBtn = document.getElementById("openCreateUserBtn");
@@ -2396,14 +2467,16 @@ function bindAuthEvents() {
             display_name: document.getElementById("cuName").value,
             password: document.getElementById("cuPassword").value,
             role_level: Number(document.getElementById("cuRoleLevel").value),
-            scopes: getSelectedScopes(document.getElementById("cuScopesWrap"))
-          })
+            scopes: getSelectedScopes(document.getElementById("cuScopesWrap")),
+          }),
         });
         document.getElementById("createUserModal").classList.add("hidden");
         createUserForm.reset();
         showToast("User created");
         loadAdminUsers();
-      } catch (err) { showToast(err.message, "error"); }
+      } catch (err) {
+        showToast(err.message, "error");
+      }
     });
   }
 
@@ -2420,13 +2493,15 @@ function bindAuthEvents() {
             display_name: document.getElementById("euName").value,
             role_level: Number(document.getElementById("euRoleLevel").value),
             scopes: getSelectedScopes(document.getElementById("euScopesWrap")),
-            password: document.getElementById("euPassword").value || undefined
-          })
+            password: document.getElementById("euPassword").value || undefined,
+          }),
         });
         document.getElementById("editUserModal").classList.add("hidden");
         showToast("User updated");
         loadAdminUsers();
-      } catch (err) { showToast(err.message, "error"); }
+      } catch (err) {
+        showToast(err.message, "error");
+      }
     });
   }
 
@@ -2443,9 +2518,14 @@ function bindAuthEvents() {
           document.getElementById("euName").value = user.display_name || "";
           document.getElementById("euRoleLevel").value = user.role_level;
           document.getElementById("euPassword").value = "";
-          renderScopeChips(document.getElementById("euScopesWrap"), user.scopes || []);
+          renderScopeChips(
+            document.getElementById("euScopesWrap"),
+            user.scopes || [],
+          );
           document.getElementById("editUserModal").classList.remove("hidden");
-        } catch (err) { showToast(err.message, "error"); }
+        } catch (err) {
+          showToast(err.message, "error");
+        }
         return;
       }
 
@@ -2453,20 +2533,29 @@ function bindAuthEvents() {
       if (delBtn) {
         if (!confirm(`Delete user ${delBtn.dataset.delEmail}?`)) return;
         try {
-          await api(`/v1/admin/users/${delBtn.dataset.delUid}`, { method: "DELETE" });
+          await api(`/v1/admin/users/${delBtn.dataset.delUid}`, {
+            method: "DELETE",
+          });
           showToast("User deleted");
           loadAdminUsers();
-        } catch (err) { showToast(err.message, "error"); }
+        } catch (err) {
+          showToast(err.message, "error");
+        }
         return;
       }
 
       const unfreezeBtn = event.target.closest("button[data-unfreeze-uid]");
       if (unfreezeBtn) {
         try {
-          await api(`/v1/admin/users/${unfreezeBtn.dataset.unfreezeUid}/unfreeze`, { method: "POST" });
+          await api(
+            `/v1/admin/users/${unfreezeBtn.dataset.unfreezeUid}/unfreeze`,
+            { method: "POST" },
+          );
           showToast("User unfrozen");
           loadAdminUsers();
-        } catch (err) { showToast(err.message, "error"); }
+        } catch (err) {
+          showToast(err.message, "error");
+        }
       }
     });
   }
@@ -2481,22 +2570,26 @@ async function loadAdminUsers() {
       list.innerHTML = `<div class="list-item"><div class="main">No users found</div></div>`;
       return;
     }
-    list.innerHTML = users.map(u => `
+    list.innerHTML = users
+      .map(
+        (u) => `
       <div class="user-card">
         <div class="user-info">
           <strong>${escapeHtml(u.display_name || u.email)}</strong>
           <span class="meta">${escapeHtml(u.email)} · Level ${u.role_level}
-            ${u.is_frozen ? '<span class="badge-frozen">FROZEN</span>' : ''}
+            ${u.is_frozen ? '<span class="badge-frozen">FROZEN</span>' : ""}
           </span>
-          <span class="meta">${(u.scopes || []).map(s => `<span class="badge-level">${escapeHtml(s)}</span>`).join(" ")}</span>
+          <span class="meta">${(u.scopes || []).map((s) => `<span class="badge-level">${escapeHtml(s)}</span>`).join(" ")}</span>
         </div>
         <div class="user-actions">
           <button class="btn secondary" data-edit-uid="${u.id}">Edit</button>
-          ${u.is_frozen ? `<button class="btn secondary" data-unfreeze-uid="${u.id}">Unfreeze</button>` : ''}
+          ${u.is_frozen ? `<button class="btn secondary" data-unfreeze-uid="${u.id}">Unfreeze</button>` : ""}
           <button class="btn danger" data-del-uid="${u.id}" data-del-email="${escapeHtml(u.email)}">Delete</button>
         </div>
       </div>
-    `).join("");
+    `,
+      )
+      .join("");
   } catch (err) {
     list.innerHTML = `<div class="list-item"><div class="main">Failed to load users</div></div>`;
   }
@@ -2513,7 +2606,9 @@ async function loadCurrentUser() {
     const emailEl = document.getElementById("currentUserEmail");
     if (emailEl) emailEl.textContent = user.email || "";
     // Show admin nav if user has users:manage or admin scope
-    const hasAdmin = (user.scopes || []).some(s => s === "admin" || s === "users:manage");
+    const hasAdmin = (user.scopes || []).some(
+      (s) => s === "admin" || s === "users:manage",
+    );
     const adminNavBtn = document.getElementById("adminNavBtn");
     if (adminNavBtn) {
       if (hasAdmin) adminNavBtn.classList.remove("hidden");
@@ -2566,4 +2661,3 @@ async function boot() {
 }
 
 boot();
-
