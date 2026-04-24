@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"kraken/internal/db"
-	"kraken/internal/notifier"
-	"kraken/internal/queue"
+	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/notifier"
+	"github.com/velox0/kraken/internal/queue"
 )
 
 type Notifier struct {

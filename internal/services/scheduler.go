@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"kraken/internal/db"
-	"kraken/internal/queue"
+	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/queue"
 )
 
 type Scheduler struct {

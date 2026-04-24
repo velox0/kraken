@@ -7,11 +7,11 @@ import (
 	"os/exec"
 	"time"
 
-	"kraken/internal/autofix"
-	"kraken/internal/db"
-	"kraken/internal/incident"
-	"kraken/internal/monitor"
-	"kraken/internal/queue"
+	"github.com/velox0/kraken/internal/autofix"
+	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/incident"
+	"github.com/velox0/kraken/internal/monitor"
+	"github.com/velox0/kraken/internal/queue"
 )
 
 type Worker struct {

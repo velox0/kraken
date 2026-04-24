@@ -11,14 +11,14 @@ import (
 	"syscall"
 	"time"
 
-	"kraken/internal/api"
-	"kraken/internal/autofix"
-	"kraken/internal/config"
-	"kraken/internal/db"
-	"kraken/internal/incident"
-	"kraken/internal/notifier"
-	"kraken/internal/queue"
-	"kraken/internal/services"
+	"github.com/velox0/kraken/internal/api"
+	"github.com/velox0/kraken/internal/autofix"
+	"github.com/velox0/kraken/internal/config"
+	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/incident"
+	"github.com/velox0/kraken/internal/notifier"
+	"github.com/velox0/kraken/internal/queue"
+	"github.com/velox0/kraken/internal/services"
 )
 
 func main() {

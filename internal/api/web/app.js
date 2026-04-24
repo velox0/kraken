@@ -414,16 +414,16 @@ function renderPathHealthPanel() {
 
   if (!state.selectedProject) {
     el.pathsHealthList.innerHTML = `<div class="list-item"><div class="main">No project selected</div></div>`;
-    el.pathLogsTitle.textContent = "Select a path to view health logs.";
-    el.pathLogsList.innerHTML = `<div class="list-item"><div class="main">No path logs</div></div>`;
+    el.pathLogsTitle.textContent = "Select a route to view health logs.";
+    el.pathLogsList.innerHTML = `<div class="list-item"><div class="main">No route logs</div></div>`;
     return;
   }
 
   const paths = state.data.pathHealth || [];
   if (!paths.length) {
-    el.pathsHealthList.innerHTML = `<div class="list-item"><div class="main">No paths configured</div></div>`;
-    el.pathLogsTitle.textContent = "Select a path to view health logs.";
-    el.pathLogsList.innerHTML = `<div class="list-item"><div class="main">No path logs</div></div>`;
+    el.pathsHealthList.innerHTML = `<div class="list-item"><div class="main">No routes configured</div></div>`;
+    el.pathLogsTitle.textContent = "Select a route to view health logs.";
+    el.pathLogsList.innerHTML = `<div class="list-item"><div class="main">No route logs</div></div>`;
     return;
   }
 
@@ -454,7 +454,7 @@ function renderPathHealthPanel() {
   if (selectedPath) {
     el.pathLogsTitle.textContent = `Logs: ${selectedPath.target}`;
   } else {
-    el.pathLogsTitle.textContent = "Select a path to view health logs.";
+    el.pathLogsTitle.textContent = "Select a route to view health logs.";
   }
 
   const runs = state.data.pathRuns || [];
@@ -472,7 +472,7 @@ function renderPathHealthPanel() {
         `,
         )
         .join("")
-    : `<div class="list-item"><div class="main">No logs for selected path</div></div>`;
+    : `<div class="list-item"><div class="main">No logs for selected route</div></div>`;
 }
 
 function selectView(viewId) {
@@ -1360,7 +1360,7 @@ async function refreshSelectedProject() {
         api(
           `/v1/projects/${projectID}/uptime?window=${encodeURIComponent(state.activeWindow)}`,
         ),
-        api(`/v1/projects/${projectID}/paths/health`),
+        api(`/v1/projects/${projectID}/routes/health`),
       ]);
 
     if (!state.selectedProject || state.selectedProject.id !== projectID) {

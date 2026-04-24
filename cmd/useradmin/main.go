@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"kraken/internal/config"
+	"github.com/velox0/kraken/internal/config"
 )
 
 func usage() {

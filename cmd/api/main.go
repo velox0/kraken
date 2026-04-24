@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"kraken/internal/api"
-	"kraken/internal/config"
-	"kraken/internal/db"
-	"kraken/internal/queue"
+	"github.com/velox0/kraken/internal/api"
+	"github.com/velox0/kraken/internal/config"
+	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/queue"
 )
 
 func main() {

@@ -17,7 +17,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"kraken/internal/db"
+	"github.com/velox0/kraken/internal/db"
 )
 
 type contextKey string

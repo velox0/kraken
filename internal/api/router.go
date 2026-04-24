@@ -16,8 +16,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"kraken/internal/db"
-	"kraken/internal/queue"
+	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/queue"
 )
 
 //go:embed web/*
@@ -79,7 +79,7 @@ func (h *Handler) Router() http.Handler {
 			r.With(RequireScope("logs:read")).Get("/projects/{projectID}/logs", h.listProjectLogs)
 			r.With(RequireScope("incidents:read")).Get("/projects/{projectID}/incidents", h.listProjectIncidents)
 			r.With(RequireScope("check_runs:read")).Get("/projects/{projectID}/check-runs", h.listProjectCheckRuns)
-			r.With(RequireScope("paths:read")).Get("/projects/{projectID}/paths/health", h.listPathHealth)
+			r.With(RequireScope("routes:read")).Get("/projects/{projectID}/routes/health", h.listRouteHealth)
 			r.With(RequireScope("uptime:read")).Get("/projects/{projectID}/uptime", h.getProjectUptime)
 			r.With(RequireScope("fixes:read")).Get("/projects/{projectID}/fixes", h.listProjectFixes)
 			r.With(RequireScope("fixes:write")).Post("/projects/{projectID}/fixes", h.createProjectFix)
@@ -491,18 +491,18 @@ func (h *Handler) listCheckRunsByCheck(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, runs)
 }
 
-func (h *Handler) listPathHealth(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) listRouteHealth(w http.ResponseWriter, r *http.Request) {
 	projectID, err := parseIDParam(r, "projectID")
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	paths, err := h.store.ListPathHealthByProject(r.Context(), projectID)
+	routes, err := h.store.ListRouteHealthByProject(r.Context(), projectID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, paths)
+	writeJSON(w, http.StatusOK, routes)
 }
 
 type uptimeResponse struct {

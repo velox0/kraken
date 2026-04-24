@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"kraken/internal/config"
-	"kraken/internal/db"
-	"kraken/internal/notifier"
-	"kraken/internal/queue"
-	"kraken/internal/services"
+	"github.com/velox0/kraken/internal/config"
+	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/notifier"
+	"github.com/velox0/kraken/internal/queue"
+	"github.com/velox0/kraken/internal/services"
 )
 
 func main() {

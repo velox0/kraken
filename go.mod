@@ -1,4 +1,4 @@
-module kraken
+module github.com/velox0/kraken
 
 go 1.25
 

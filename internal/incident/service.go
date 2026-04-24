@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"kraken/internal/autofix"
-	"kraken/internal/db"
-	"kraken/internal/monitor"
-	"kraken/internal/queue"
+	"github.com/velox0/kraken/internal/autofix"
+	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/monitor"
+	"github.com/velox0/kraken/internal/queue"
 )
 
 // EmailConfig holds env-based SMTP credentials for escalation emails.

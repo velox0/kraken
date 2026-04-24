@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"kraken/internal/monitor"
+	"github.com/velox0/kraken/internal/monitor"
 )
 
 type Store struct {
@@ -474,29 +474,29 @@ func (s *Store) DeleteProject(ctx context.Context, projectID int64) error {
 }
 
 type Check struct {
-	ID         int64                `json:"id"`
-	ProjectID  int64                `json:"project_id"`
-	Type       string               `json:"type"`
-	Target     string               `json:"target"`
-	TimeoutMs  int                  `json:"timeout_ms"`
-	Assertions []monitor.Assertion  `json:"assertions"`
-	CreatedAt  time.Time            `json:"created_at"`
+	ID         int64               `json:"id"`
+	ProjectID  int64               `json:"project_id"`
+	Type       string              `json:"type"`
+	Target     string              `json:"target"`
+	TimeoutMs  int                 `json:"timeout_ms"`
+	Assertions []monitor.Assertion `json:"assertions"`
+	CreatedAt  time.Time           `json:"created_at"`
 }
 
 type CreateCheckParams struct {
-	ProjectID  int64                `json:"project_id"`
-	Type       string               `json:"type"`
-	Target     string               `json:"target"`
-	TimeoutMs  int                  `json:"timeout_ms"`
-	Assertions []monitor.Assertion  `json:"assertions"`
+	ProjectID  int64               `json:"project_id"`
+	Type       string              `json:"type"`
+	Target     string              `json:"target"`
+	TimeoutMs  int                 `json:"timeout_ms"`
+	Assertions []monitor.Assertion `json:"assertions"`
 }
 
 type ReplaceCheckParams struct {
-	ID         *int64               `json:"id"`
-	Type       string               `json:"type"`
-	Target     string               `json:"target"`
-	TimeoutMs  int                  `json:"timeout_ms"`
-	Assertions []monitor.Assertion  `json:"assertions"`
+	ID         *int64              `json:"id"`
+	Type       string              `json:"type"`
+	Target     string              `json:"target"`
+	TimeoutMs  int                 `json:"timeout_ms"`
+	Assertions []monitor.Assertion `json:"assertions"`
 }
 
 func (s *Store) CreateCheck(ctx context.Context, p CreateCheckParams) (Check, error) {
@@ -921,20 +921,20 @@ type CheckRun struct {
 	CreatedAt      time.Time `json:"created_at"`
 }
 
-type PathHealth struct {
-	CheckID            int64                `json:"check_id"`
-	Type               string               `json:"type"`
-	Target             string               `json:"target"`
-	TimeoutMs          int                  `json:"timeout_ms"`
-	Assertions         []monitor.Assertion  `json:"assertions"`
-	LastStatus         string     `json:"last_status"`
-	LastCheckedAt      *time.Time `json:"last_checked_at,omitempty"`
-	LastResponseTimeMs *int       `json:"last_response_time_ms,omitempty"`
-	LastErrorMessage   *string    `json:"last_error_message,omitempty"`
-	Runs1h             int        `json:"runs_1h"`
-	Healthy1h          int        `json:"healthy_1h"`
-	Failed1h           int        `json:"failed_1h"`
-	SuccessRate1h      float64    `json:"success_rate_1h"`
+type RouteHealth struct {
+	CheckID            int64               `json:"check_id"`
+	Type               string              `json:"type"`
+	Target             string              `json:"target"`
+	TimeoutMs          int                 `json:"timeout_ms"`
+	Assertions         []monitor.Assertion `json:"assertions"`
+	LastStatus         string              `json:"last_status"`
+	LastCheckedAt      *time.Time          `json:"last_checked_at,omitempty"`
+	LastResponseTimeMs *int                `json:"last_response_time_ms,omitempty"`
+	LastErrorMessage   *string             `json:"last_error_message,omitempty"`
+	Runs1h             int                 `json:"runs_1h"`
+	Healthy1h          int                 `json:"healthy_1h"`
+	Failed1h           int                 `json:"failed_1h"`
+	SuccessRate1h      float64             `json:"success_rate_1h"`
 }
 
 type UptimePoint struct {
@@ -1210,7 +1210,7 @@ func (s *Store) ListCheckRunsByCheck(ctx context.Context, projectID, checkID int
 	return res, rows.Err()
 }
 
-func (s *Store) ListPathHealthByProject(ctx context.Context, projectID int64) ([]PathHealth, error) {
+func (s *Store) ListRouteHealthByProject(ctx context.Context, projectID int64) ([]RouteHealth, error) {
 	rows, err := s.pool.Query(ctx, `
 		WITH latest_runs AS (
 			SELECT DISTINCT ON (check_id)
@@ -1257,9 +1257,9 @@ func (s *Store) ListPathHealthByProject(ctx context.Context, projectID int64) ([
 	}
 	defer rows.Close()
 
-	res := make([]PathHealth, 0)
+	res := make([]RouteHealth, 0)
 	for rows.Next() {
-		var item PathHealth
+		var item RouteHealth
 		var assertionsRaw []byte
 		var lastChecked sql.NullTime
 		var responseTime sql.NullInt32
