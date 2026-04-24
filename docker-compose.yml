@@ -71,6 +71,10 @@ services:
       ADMIN_NAME: Admin
     ports:
       - "8080:8080"
+    volumes:
+      - ./scripts/fixes:/app/scripts/fixes
+    extra_hosts:
+      - "host.kraken:host-gateway"
 
 volumes:
   pgdata:
