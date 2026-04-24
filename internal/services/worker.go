@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/velox0/kraken/internal/autofix"
@@ -64,7 +65,12 @@ func (w *Worker) handleCheckJob(ctx context.Context, job queue.CheckJob) {
 		return
 	}
 
-	result := monitor.RunCheck(ctx, checkCtx.Type, checkCtx.Target, checkCtx.TimeoutMs, checkCtx.Assertions)
+	// Build effective target: domain + route.
+	// The check target stores just the route (e.g. "/" or "/api"),
+	// and the project domain provides the host (e.g. "localhost:3000").
+	effectiveTarget := buildEffectiveTarget(checkCtx.Type, checkCtx.ProjectDomain, checkCtx.Target)
+
+	result := monitor.RunCheck(ctx, checkCtx.Type, effectiveTarget, checkCtx.TimeoutMs, checkCtx.Assertions)
 	if err := w.Incident.HandleCheckResult(ctx, checkCtx, result); err != nil {
 		w.Log.Printf("handle check result failed for check %d: %v", checkCtx.ID, err)
 		return
@@ -156,4 +162,39 @@ func (w *Worker) Validate() error {
 		return fmt.Errorf("worker incident service is nil")
 	}
 	return nil
+}
+
+// buildEffectiveTarget constructs the final target by combining the project
+// domain with the check's route. For HTTP checks the result is "domain/route"
+// (the monitor layer prepends the scheme). For TCP and ping checks the domain
+// itself is the target since path-based routes don't apply.
+func buildEffectiveTarget(checkType, domain, route string) string {
+	domain = strings.TrimSpace(domain)
+	route = strings.TrimSpace(route)
+
+	switch checkType {
+	case "http":
+		// If the route is already a full URL, use it as-is.
+		if strings.HasPrefix(route, "http://") || strings.HasPrefix(route, "https://") {
+			return route
+		}
+		if domain == "" {
+			return route
+		}
+		// Ensure exactly one slash between domain and route.
+		domain = strings.TrimRight(domain, "/")
+		if route == "" || route == "/" {
+			return domain + "/"
+		}
+		if !strings.HasPrefix(route, "/") {
+			route = "/" + route
+		}
+		return domain + route
+	default:
+		// TCP and ping – the domain is the host; route is ignored.
+		if domain != "" {
+			return domain
+		}
+		return route
+	}
 }
