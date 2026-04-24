@@ -37,6 +37,17 @@ func main() {
 		log.Fatalf("redis ping failed: %v", err)
 	}
 
+	autofixCrypto, err := autofix.NewCrypto(cfg.FixEnvSecret)
+	if err != nil {
+		log.Fatalf("fix env crypto init failed: %v", err)
+	}
+	if autofixCrypto != nil {
+		store.SetFixEnvCrypto(autofixCrypto)
+	}
+
+	toolsDir := autofix.EnsureToolsDir()
+	log.Printf("fix tools dir: %s", toolsDir)
+
 	autofixEngine := autofix.NewEngine(cfg.FixScriptsDir, cfg.AllowedFixCommands)
 	incSvc := incident.NewService(store, q, autofixEngine, time.Duration(cfg.AlertCooldownSec)*time.Second, incident.EmailConfig{
 		Host: cfg.EmailHost,

@@ -25,6 +25,7 @@ const state = {
     pathHealth: [],
     pathRuns: [],
     smtpProfiles: [],
+    envVars: [],
   },
 };
 
@@ -147,6 +148,11 @@ const el = {
   fixRunDetailModal: document.getElementById("fixRunDetailModal"),
   fixRunDetailBody: document.getElementById("fixRunDetailBody"),
   closeFixRunDetailX: document.getElementById("closeFixRunDetailX"),
+  envVarForm: document.getElementById("envVarForm"),
+  envVarName: document.getElementById("envVarName"),
+  envVarValue: document.getElementById("envVarValue"),
+  envVarIsSecret: document.getElementById("envVarIsSecret"),
+  envVarsList: document.getElementById("envVarsList"),
 };
 
 function setCookie(name, value, days) {
@@ -1349,7 +1355,7 @@ async function refreshSelectedProject() {
 
   const projectID = state.selectedProject.id;
   try {
-    const [checks, logs, incidents, runs, fixes, fixRuns, uptime, pathHealth] =
+    const [checks, logs, incidents, runs, fixes, fixRuns, uptime, pathHealth, envVars] =
       await Promise.all([
         api(`/v1/projects/${projectID}/checks`),
         api(`/v1/projects/${projectID}/logs?limit=220`),
@@ -1361,6 +1367,7 @@ async function refreshSelectedProject() {
           `/v1/projects/${projectID}/uptime?window=${encodeURIComponent(state.activeWindow)}`,
         ),
         api(`/v1/projects/${projectID}/routes/health`),
+        api(`/v1/projects/${projectID}/env-vars`),
       ]);
 
     if (!state.selectedProject || state.selectedProject.id !== projectID) {
@@ -1390,12 +1397,14 @@ async function refreshSelectedProject() {
       pathHealth: pathHealth || [],
       pathRuns: pathRuns || [],
       smtpProfiles: state.data.smtpProfiles || [],
+      envVars: envVars || [],
     };
 
     renderDashboard();
     renderPathHealthPanel();
     renderUptimePanel();
     renderFixRuns();
+    renderEnvVars();
     el.lastUpdatedText.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
     setLiveState("ok");
     setBanner("");
@@ -1644,6 +1653,94 @@ async function deleteFix(fixID, fixName) {
     await refreshSelectedProject();
   } catch (err) {
     showToast(err.message, "error");
+  }
+}
+
+// ---------- Environment Variables ----------
+
+function renderEnvVars() {
+  if (!el.envVarsList) return;
+  const vars = state.data.envVars || [];
+  if (!state.selectedProject || vars.length === 0) {
+    el.envVarsList.innerHTML = `<div class="list-item"><div class="main">No environment variables configured</div></div>`;
+    return;
+  }
+
+  el.envVarsList.innerHTML = vars
+    .map(
+      (v) => `
+      <div class="list-item">
+        <div class="main" style="gap:0.15rem;">
+          <strong style="font-family:'JetBrains Mono',monospace; font-size:0.9rem;">${escapeHtml(v.name)}</strong>
+          <span class="meta" style="font-family:'JetBrains Mono',monospace;">${v.is_secret ? '<span style="color:var(--warn);">🔒 secret</span> &nbsp;' : ''}${escapeHtml(v.value)}</span>
+        </div>
+        <div class="inline-actions">
+          <button class="btn ghost" data-edit-env-name="${escapeHtml(v.name)}" data-edit-env-secret="${v.is_secret}">Edit</button>
+          <button class="btn ghost danger" data-delete-env-id="${v.id}" data-env-name="${escapeHtml(v.name)}" aria-label="Delete">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
+        </div>
+      </div>`,
+    )
+    .join("");
+}
+
+async function saveEnvVar(e) {
+  if (e) e.preventDefault();
+  if (!state.selectedProject) return;
+
+  const name = (el.envVarName?.value || "").trim();
+  const value = el.envVarValue?.value || "";
+  const isSecret = el.envVarIsSecret?.checked ?? true;
+
+  if (!name) {
+    showToast("Name is required", "error");
+    return;
+  }
+
+  try {
+    await api(`/v1/projects/${state.selectedProject.id}/env-vars`, {
+      method: "POST",
+      body: JSON.stringify({ name, value, is_secret: isSecret }),
+    });
+    showToast(`Variable ${name} saved`);
+    if (el.envVarName) el.envVarName.value = "";
+    if (el.envVarValue) el.envVarValue.value = "";
+    if (el.envVarIsSecret) {
+      el.envVarIsSecret.checked = true;
+      el.envVarIsSecret.dispatchEvent(new Event("change"));
+    }
+    await refreshSelectedProject();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+
+async function deleteEnvVar(envVarID, envName) {
+  if (!state.selectedProject) return;
+  if (!confirm(`Delete environment variable "${envName}"?`)) return;
+  try {
+    await api(
+      `/v1/projects/${state.selectedProject.id}/env-vars/${envVarID}`,
+      { method: "DELETE" },
+    );
+    showToast(`Variable ${envName} deleted`);
+    await refreshSelectedProject();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+
+function editEnvVar(name, isSecret) {
+  if (el.envVarName) el.envVarName.value = name;
+  if (el.envVarValue) {
+    el.envVarValue.value = "";
+    el.envVarValue.placeholder = "enter new value";
+    el.envVarValue.focus();
+  }
+  if (el.envVarIsSecret) {
+    el.envVarIsSecret.checked = isSecret;
+    el.envVarIsSecret.dispatchEvent(new Event("change"));
   }
 }
 
@@ -1932,6 +2029,28 @@ function attachEvents() {
     el.deleteProjectBtn.addEventListener("click", deleteProject);
 
   if (el.fixUploadForm) el.fixUploadForm.addEventListener("submit", uploadFix);
+  if (el.envVarForm) el.envVarForm.addEventListener("submit", saveEnvVar);
+  if (el.envVarsList) {
+    el.envVarsList.addEventListener("click", async (event) => {
+      const editBtn = event.target.closest("button[data-edit-env-name]");
+      if (editBtn) {
+        editEnvVar(editBtn.dataset.editEnvName, editBtn.dataset.editEnvSecret === "true");
+        return;
+      }
+      const deleteBtn = event.target.closest("button[data-delete-env-id]");
+      if (deleteBtn) {
+        await deleteEnvVar(Number(deleteBtn.dataset.deleteEnvId), deleteBtn.dataset.envName || "");
+        return;
+      }
+    });
+  }
+
+  if (el.envVarIsSecret && el.envVarValue) {
+    el.envVarIsSecret.addEventListener("change", () => {
+      el.envVarValue.type = el.envVarIsSecret.checked ? "password" : "text";
+    });
+    el.envVarValue.type = el.envVarIsSecret.checked ? "password" : "text";
+  }
 
   // Sub-tabs
   initSubTabs(document.getElementById("fixesSubTabs"));

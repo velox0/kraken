@@ -198,11 +198,19 @@ func (s *Service) runAutofix(ctx context.Context, check db.CheckContext, errMess
 		_ = s.store.InsertLog(ctx, check.ProjectID, "error", "failed to record fix run: "+insertErr.Error())
 	}
 
+	// Load per-project env vars for the fix script execution.
+	envVars, envErr := s.store.GetFixEnvVarsForExecution(ctx, check.ProjectID)
+	if envErr != nil {
+		_ = s.store.InsertLog(ctx, check.ProjectID, "error", "autofix env vars load failed: "+envErr.Error())
+		envVars = nil // Execute without env vars rather than failing entirely.
+	}
+
 	started := time.Now()
 	result, execErr := s.autofixEngine.Execute(ctx, autofix.FixDefinition{
 		Name:       fix.Name,
 		ScriptPath: fix.ScriptPath,
 		TimeoutSec: fix.TimeoutSec,
+		EnvVars:    envVars,
 	})
 	durationMs := int(time.Since(started).Milliseconds())
 

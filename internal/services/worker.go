@@ -42,7 +42,7 @@ func (w *Worker) Run(ctx context.Context) {
 			w.handleFixJob(ctx, fixJob)
 			continue
 		}
-		if err != nil && err != queue.ErrNoJob {
+		if err != queue.ErrNoJob {
 			w.Log.Printf("dequeue fix failed: %v", err)
 		}
 
@@ -115,11 +115,19 @@ func (w *Worker) handleFixJob(ctx context.Context, job queue.FixJob) {
 
 	_ = w.Store.InsertLog(ctx, job.ProjectID, "warn", fmt.Sprintf("manual fix triggered: %s by %s", fix.Name, job.RequestedBy))
 
+	// Load per-project env vars for the fix script execution.
+	envVars, envErr := w.Store.GetFixEnvVarsForExecution(ctx, job.ProjectID)
+	if envErr != nil {
+		w.Log.Printf("load fix env vars failed: %v", envErr)
+		envVars = nil
+	}
+
 	started := time.Now()
 	result, execErr := w.AutofixEngine.Execute(ctx, autofix.FixDefinition{
 		Name:       fix.Name,
 		ScriptPath: fix.ScriptPath,
 		TimeoutSec: fix.TimeoutSec,
+		EnvVars:    envVars,
 	})
 	durationMs := int(time.Since(started).Milliseconds())
 

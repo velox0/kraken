@@ -16,6 +16,7 @@ type Config struct {
 	SchedulerTickSec   int
 	FixScriptsDir      string
 	AllowedFixCommands []string
+	FixEnvSecret       string
 	AlertCooldownSec   int
 	Environment        string
 	UIDir              string
@@ -37,6 +38,7 @@ func Load() Config {
 		SchedulerTickSec:   envInt("SCHEDULER_TICK_SEC", 2),
 		FixScriptsDir:      envOrDefault("FIX_SCRIPTS_DIR", "scripts/fixes"),
 		AllowedFixCommands: envCSV("ALLOWED_FIX_COMMANDS", defaultAllowedFixCommands()),
+		FixEnvSecret:       os.Getenv("FIX_ENV_SECRET"),
 		AlertCooldownSec:   envInt("ALERT_COOLDOWN_SEC", 300),
 		Environment:        envOrDefault("APP_ENV", "dev"),
 		UIDir:              os.Getenv("UI_DIR"),

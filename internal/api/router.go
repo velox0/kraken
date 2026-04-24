@@ -89,6 +89,9 @@ func (h *Handler) Router() http.Handler {
 			r.With(RequireScope("fixes:run")).Post("/projects/{projectID}/fixes/{fixID}/run", h.runProjectFix)
 			r.With(RequireScope("fixes:read")).Get("/projects/{projectID}/fix-runs", h.listFixRuns)
 			r.With(RequireScope("fixes:read")).Get("/projects/{projectID}/fix-runs/{runID}", h.getFixRun)
+			r.With(RequireScope("fixes:read")).Get("/projects/{projectID}/env-vars", h.listFixEnvVars)
+			r.With(RequireScope("fixes:write")).Post("/projects/{projectID}/env-vars", h.setFixEnvVar)
+			r.With(RequireScope("fixes:delete")).Delete("/projects/{projectID}/env-vars/{envVarID}", h.deleteFixEnvVar)
 			r.With(RequireScope("smtp_profiles:read")).Get("/smtp_profiles", h.listSMTPProfiles)
 			r.With(RequireScope("smtp_profiles:write")).Post("/smtp_profiles", h.createSMTPProfile)
 		})
@@ -869,6 +872,67 @@ func (h *Handler) getFixRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, run)
+}
+
+func (h *Handler) listFixEnvVars(w http.ResponseWriter, r *http.Request) {
+	projectID, err := parseIDParam(r, "projectID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	vars, err := h.store.ListFixEnvVars(r.Context(), projectID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, vars)
+}
+
+type setEnvVarRequest struct {
+	Name     string `json:"name"`
+	Value    string `json:"value"`
+	IsSecret bool   `json:"is_secret"`
+}
+
+func (h *Handler) setFixEnvVar(w http.ResponseWriter, r *http.Request) {
+	projectID, err := parseIDParam(r, "projectID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	var req setEnvVarRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if strings.TrimSpace(req.Name) == "" {
+		writeError(w, http.StatusBadRequest, errors.New("name is required"))
+		return
+	}
+	v, err := h.store.UpsertFixEnvVar(r.Context(), projectID, req.Name, req.Value, req.IsSecret)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+func (h *Handler) deleteFixEnvVar(w http.ResponseWriter, r *http.Request) {
+	projectID, err := parseIDParam(r, "projectID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	envVarID, err := parseIDParam(r, "envVarID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := h.store.DeleteFixEnvVar(r.Context(), projectID, envVarID); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"deleted": true, "id": envVarID})
 }
 
 func (h *Handler) createSMTPProfile(w http.ResponseWriter, r *http.Request) {

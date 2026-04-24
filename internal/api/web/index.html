@@ -577,6 +577,20 @@
               Runs
               <span id="fixRunsCount" class="sub-tab-badge hidden">0</span>
             </button>
+            <button class="sub-tab" data-subtab="fixEnvPane">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              Environment
+            </button>
           </nav>
 
           <div id="fixScriptsPane" class="sub-tab-pane active">
@@ -685,6 +699,74 @@
             </article>
           </div>
           <!-- end fixRunsPane -->
+
+          <div id="fixEnvPane" class="sub-tab-pane">
+            <div class="fixes-grid">
+              <div class="fixes-forms">
+                <div class="fix-form-block">
+                  <h4>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect
+                        x="3"
+                        y="11"
+                        width="18"
+                        height="11"
+                        rx="2"
+                        ry="2"
+                      ></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Add Environment Variable
+                  </h4>
+                  <form id="envVarForm" class="form-grid compact">
+                    <label class="full"
+                      >Name<input
+                        id="envVarName"
+                        placeholder="API_KEY"
+                        required
+                        autocomplete="off"
+                    /></label>
+                    <label class="full"
+                      >Value<input
+                        id="envVarValue"
+                        placeholder="value"
+                        required
+                        autocomplete="off"
+                    /></label>
+                    <label class="checkbox-row">
+                      <input id="envVarIsSecret" type="checkbox" checked />
+                      Secret
+                    </label>
+                    <button class="btn primary" type="submit">
+                      Save Variable
+                    </button>
+                  </form>
+                  <p
+                    class="muted"
+                    style="margin-top: 0.5rem; font-size: 0.78rem"
+                  >
+                    Environment variables are injected into fix scripts at
+                    runtime. Secret values are encrypted at rest and cannot be
+                    viewed after saving. Editing a variable replaces the old
+                    value entirely.
+                  </p>
+                </div>
+              </div>
+
+              <div class="fixes-list-panel">
+                <h4>Project Environment</h4>
+                <div id="envVarsList" class="list"></div>
+              </div>
+            </div>
+          </div>
+          <!-- end fixEnvPane -->
         </section>
 
         <div id="fixRunDetailModal" class="modal-overlay hidden">
@@ -1117,7 +1199,6 @@
                   </svg>
                   Status Timeline
                 </h3>
-
               </div>
               <div id="uptimeCanvasWrap" class="uptime-canvas-wrap">
                 <canvas
