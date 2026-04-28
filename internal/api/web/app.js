@@ -14,6 +14,8 @@ const state = {
   uptimeHoverIndex: null,
   uptimeRenderToken: 0,
   uptimeResizeObserver: null,
+  uptimeScrollOffset: 0,
+  uptimeScrollPinned: true,
   data: {
     checks: [],
     logs: [],
@@ -86,6 +88,8 @@ const el = {
   uptimeCanvasWrap: document.getElementById("uptimeCanvasWrap"),
   uptimeCanvas: document.getElementById("uptimeCanvas"),
   uptimeTooltip: document.getElementById("uptimeTooltip"),
+  uptimeScrollLeft: document.getElementById("uptimeScrollLeft"),
+  uptimeScrollRight: document.getElementById("uptimeScrollRight"),
   runsList: document.getElementById("runsList"),
   logsList: document.getElementById("logsList"),
   liveDot: document.getElementById("liveDot"),
@@ -366,26 +370,34 @@ function scheduleUptimeRender() {
 function pickUptimeHoverIndex(clientX) {
   const canvas = el.uptimeCanvas;
   const points = state.data.uptime?.points || [];
-  if (!canvas || points.length === 0) {
-    return null;
-  }
+  if (!canvas || points.length === 0) return null;
 
   const rect = canvas.getBoundingClientRect();
-  if (rect.width < 40 || rect.height < 100) {
-    return null;
-  }
+  if (rect.width < 40 || rect.height < 100) return null;
 
   const padX = 28;
   const chartW = rect.width - padX * 2;
-  if (chartW <= 0) {
-    return null;
-  }
+  if (chartW <= 0) return null;
 
-  const x = clientX - rect.left;
-  const step = points.length > 1 ? chartW / (points.length - 1) : chartW;
-  const raw = step > 0 ? Math.round((x - padX) / step) : 0;
-  const idx = Math.max(0, Math.min(points.length - 1, raw));
-  return Number.isFinite(idx) ? idx : null;
+  const barStride = 16;
+  const x = clientX - rect.left - padX;
+  if (x < 0 || x > chartW) return null;
+
+  const screenIdx = Math.round(x / barStride);
+  const dataIdx = state.uptimeScrollOffset + screenIdx;
+  const clamped = Math.max(0, Math.min(points.length - 1, dataIdx));
+  return Number.isFinite(clamped) ? clamped : null;
+}
+
+function updateUptimeScrollButtons(canLeft, canRight) {
+  if (el.uptimeScrollLeft) {
+    el.uptimeScrollLeft.disabled = !canLeft;
+    el.uptimeScrollLeft.classList.toggle("enabled", canLeft);
+  }
+  if (el.uptimeScrollRight) {
+    el.uptimeScrollRight.disabled = !canRight;
+    el.uptimeScrollRight.classList.toggle("enabled", canRight);
+  }
 }
 
 function syncSelectedPath(pathHealth) {
@@ -644,11 +656,30 @@ function renderDashboard() {
   renderPathHealthPanel();
 }
 
+function fmtUptimeTick(date, windowName) {
+  const d = new Date(date);
+  if (windowName === "1h") {
+    // e.g. "11:45"
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+  if (windowName === "12h" || windowName === "1d") {
+    // e.g. "14:00"
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+  if (windowName === "7d") {
+    // e.g. "Mon 14"
+    return d.toLocaleDateString([], { weekday: "short", day: "numeric" });
+  }
+  // 30d: "Apr 14"
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 function renderUptimeCanvas() {
   const canvas = el.uptimeCanvas;
   if (!canvas) return;
 
   const points = state.data.uptime?.points || [];
+  const windowName = state.activeWindow || "1h";
   const rect = canvas.getBoundingClientRect();
   if (rect.width < 40 || rect.height < 100) {
     hideUptimeTooltip();
@@ -656,8 +687,8 @@ function renderUptimeCanvas() {
   }
 
   const dpr = window.devicePixelRatio || 1;
-  const width = Math.max(300, Math.floor(rect.width * dpr));
-  const height = Math.max(180, Math.floor(rect.height * dpr));
+  const width = Math.floor(rect.width * dpr);
+  const height = Math.floor(rect.height * dpr);
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
     canvas.height = height;
@@ -667,7 +698,7 @@ function renderUptimeCanvas() {
   if (!ctx) return;
   ctx.clearRect(0, 0, width, height);
 
-  // New deeper gradient for canvas background
+  // Background
   const bg = ctx.createLinearGradient(0, 0, 0, height);
   bg.addColorStop(0, "rgba(21, 26, 45, 0.9)");
   bg.addColorStop(1, "rgba(11, 15, 25, 0.95)");
@@ -675,40 +706,48 @@ function renderUptimeCanvas() {
   ctx.fillRect(0, 0, width, height);
 
   const padX = 28 * dpr;
-  const padY = 16 * dpr;
+  const padY = 18 * dpr;
+  const tickH = 16 * dpr; // space for time ticks below bars
   const chartW = width - padX * 2;
-  const chartH = height - padY * 2;
-
-  // Lighter glowing grid lines
-  ctx.strokeStyle = "rgba(90, 120, 224, 0.15)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = padY + (chartH * i) / 4;
-    ctx.beginPath();
-    ctx.moveTo(padX, y);
-    ctx.lineTo(padX + chartW, y);
-    ctx.stroke();
-  }
+  const chartH = height - padY * 2 - tickH;
 
   if (points.length === 0) {
     hideUptimeTooltip();
+    updateUptimeScrollButtons(false, false);
     ctx.fillStyle = "rgba(156,168,214,0.9)";
     ctx.font = `${12 * dpr}px JetBrains Mono`;
     ctx.fillText("No uptime data yet", padX, height / 2);
     return;
   }
 
-  const step = points.length > 1 ? chartW / (points.length - 1) : chartW;
   const hasAnyData = points.some(
     (p) => (p.up_seconds || 0) + (p.down_seconds || 0) > 0,
   );
   if (!hasAnyData) {
     hideUptimeTooltip();
+    updateUptimeScrollButtons(false, false);
     ctx.fillStyle = "rgba(156,168,214,0.9)";
     ctx.font = `${12 * dpr}px JetBrains Mono`;
     ctx.fillText("No recent data", padX, height / 2);
     return;
   }
+
+  // --- Virtual scroll ---
+  const barW = 10 * dpr;
+  const barH = 44 * dpr;
+  const barStride = 16 * dpr;
+  const visibleCount = Math.max(1, Math.floor(chartW / barStride));
+  const maxOffset = Math.max(0, points.length - visibleCount);
+
+  if (state.uptimeScrollPinned) {
+    state.uptimeScrollOffset = maxOffset;
+  } else {
+    state.uptimeScrollOffset = Math.max(0, Math.min(maxOffset, state.uptimeScrollOffset));
+  }
+  const offset = state.uptimeScrollOffset;
+  const canScrollLeft = offset > 0;
+  const canScrollRight = offset < maxOffset;
+  updateUptimeScrollButtons(canScrollLeft, canScrollRight);
 
   const drawRoundedRect = (x, y, w, h, r) => {
     const radius = Math.max(0, Math.min(r, w / 2, h / 2));
@@ -725,69 +764,108 @@ function renderUptimeCanvas() {
     ctx.closePath();
   };
 
-  const barW = Math.max(2 * dpr, Math.floor((chartW / points.length) * 0.92));
+  // --- Draw visible bars ---
   let hoverDraw = null;
-  points.forEach((p, idx) => {
+  // Determine tick label interval (avoid label collision)
+  const labelEvery = Math.max(1, Math.round(60 / barStride * dpr));
+
+  for (let i = 0; i < visibleCount; i++) {
+    const dataIdx = offset + i;
+    if (dataIdx >= points.length) break;
+    const p = points[dataIdx];
     const known = (p.up_seconds || 0) + (p.down_seconds || 0);
+    const x = padX + i * barStride;
+    const barY = padY + chartH / 2 - barH / 2;
+
+    let color;
     if (known <= 0) {
-      return;
-    }
-    const ratio = Math.max(0, Math.min(1, p.uptime_ratio ?? 0));
-    const x = padX + idx * step - barW / 2;
-    const y = padY + (1 - ratio) * chartH;
-    const h = chartH - (y - padY);
-
-    // Use new theme colors with high contrast
-    let color = "rgba(16, 185, 129, 0.9)"; // 100% uptime green
-    if (ratio < 1) {
-      // Map ratio (0 to nearly 1) to Hue (0=red to 55=yellow)
-      const hue = Math.floor(ratio * 55);
-      color = `hsla(${hue}, 85%, 55%, 0.9)`;
-    }
-
-    const roundedX = Math.floor(x);
-    const roundedY = Math.floor(y);
-    const roundedW = Math.ceil(barW);
-    const roundedH = Math.max(1, Math.ceil(h));
-    const radius = Math.min(2.5 * dpr, roundedW / 2, roundedH / 2);
-
-    drawRoundedRect(roundedX, roundedY, roundedW, roundedH, radius);
-    ctx.fillStyle = color;
-    ctx.fill();
-
-    if (state.uptimeHoverIndex === idx) {
-      hoverDraw = {
-        idx,
-        point: p,
-        ratio,
-        x,
-        y,
-      };
-      // Bright blue glow for hover state
-      ctx.strokeStyle = "rgba(61, 189, 230, 1)";
-      ctx.lineWidth = Math.max(2, Math.floor(dpr));
+      // Unknown bucket — draw dim placeholder
+      color = "rgba(40, 48, 70, 0.6)";
+      const roundedX = Math.floor(x);
+      const roundedY = Math.floor(barY);
+      const roundedW = Math.ceil(barW);
+      const roundedH = Math.max(1, Math.ceil(barH));
+      const radius = Math.min(2.5 * dpr, roundedW / 2, roundedH / 2);
       drawRoundedRect(roundedX, roundedY, roundedW, roundedH, radius);
-      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.fill();
+    } else {
+      const ratio = Math.max(0, Math.min(1, p.uptime_ratio ?? 0));
+      if (ratio >= 1) {
+        color = "rgba(16, 185, 129, 0.9)";
+      } else {
+        const hue = Math.floor(ratio * 55);
+        color = `hsla(${hue}, 85%, 55%, 0.9)`;
+      }
+
+      const roundedX = Math.floor(x);
+      const roundedY = Math.floor(barY);
+      const roundedW = Math.ceil(barW);
+      const roundedH = Math.max(1, Math.ceil(barH));
+      const radius = Math.min(2.5 * dpr, roundedW / 2, roundedH / 2);
+      drawRoundedRect(roundedX, roundedY, roundedW, roundedH, radius);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      if (state.uptimeHoverIndex === dataIdx) {
+        hoverDraw = { idx: dataIdx, screenIdx: i, point: p, ratio, x, y: barY };
+        ctx.strokeStyle = "rgba(61, 189, 230, 1)";
+        ctx.lineWidth = Math.max(2, Math.floor(dpr));
+        drawRoundedRect(roundedX, roundedY, roundedW, roundedH, radius);
+        ctx.stroke();
+      }
     }
-  });
 
-  ctx.fillStyle = "rgba(139, 155, 180, 0.9)"; // --muted color
-  ctx.font = `${10 * dpr}px JetBrains Mono`;
-  ctx.fillText("100%", 2 * dpr, padY + 10 * dpr);
-  ctx.fillText("0%", 10 * dpr, padY + chartH);
-
-  const first = points[0];
-  const last = points[points.length - 1];
-  if (first && last) {
-    const firstLabel = new Date(first.start).toLocaleString();
-    const lastLabel = new Date(last.end).toLocaleString();
-    const labelY = height - 4 * dpr;
-    ctx.fillStyle = "rgba(139, 155, 180, 0.85)";
-    ctx.font = `${10 * dpr}px JetBrains Mono`;
-    ctx.fillText(firstLabel, padX, labelY);
-    const lastWidth = ctx.measureText(lastLabel).width;
-    ctx.fillText(lastLabel, padX + chartW - lastWidth, labelY);
+    // Time tick marks
+    if (i % labelEvery === 0) {
+      const label = fmtUptimeTick(p.start, windowName);
+      ctx.fillStyle = "rgba(100, 116, 139, 0.75)";
+      ctx.font = `${9 * dpr}px JetBrains Mono`;
+      const tickY = padY + chartH + barH * 0.5 + 9 * dpr;
+      ctx.save();
+      ctx.translate(Math.floor(x + barW / 2), tickY);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    }
   }
+
+  // --- Vignette overlays (edge-to-edge, fade top+bottom via temp canvas) ---
+  const vigW = 54 * dpr;
+  const vigColorStop = "rgba(11, 15, 25, 0.93)";
+
+  const drawVignetteEdge = (fromX, toX, side) => {
+    // Create an offscreen canvas for compositing
+    const oc = new OffscreenCanvas(Math.ceil(Math.abs(toX - fromX)), height);
+    const oc2 = oc.getContext("2d");
+    // Horizontal gradient (left or right fade)
+    const hg = oc2.createLinearGradient(0, 0, oc.width, 0);
+    if (side === "left") {
+      hg.addColorStop(0, vigColorStop);
+      hg.addColorStop(1, "rgba(11,15,25,0)");
+    } else {
+      hg.addColorStop(0, "rgba(11,15,25,0)");
+      hg.addColorStop(1, vigColorStop);
+    }
+    oc2.fillStyle = hg;
+    oc2.fillRect(0, 0, oc.width, height);
+    // Vertical mask: multiply alpha — top and bottom 30% fade out
+    oc2.globalCompositeOperation = "destination-in";
+    const vg = oc2.createLinearGradient(0, 0, 0, height);
+    const fadeStop = 0.28;
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(fadeStop, "rgba(0,0,0,1)");
+    vg.addColorStop(1 - fadeStop, "rgba(0,0,0,1)");
+    vg.addColorStop(1, "rgba(0,0,0,0)");
+    oc2.fillStyle = vg;
+    oc2.fillRect(0, 0, oc.width, height);
+    // Blit onto main canvas
+    const dx = side === "left" ? 0 : Math.floor(toX - vigW);
+    ctx.drawImage(oc, Math.floor(dx), 0);
+  };
+
+  if (canScrollLeft) drawVignetteEdge(0, vigW, "left");
+  if (canScrollRight) drawVignetteEdge(width - vigW, width, "right");
 
   if (!hoverDraw) {
     hideUptimeTooltip();
@@ -797,22 +875,21 @@ function renderUptimeCanvas() {
   if (el.uptimeTooltip && el.uptimeCanvasWrap) {
     const p = hoverDraw.point;
     const known = (p.up_seconds || 0) + (p.down_seconds || 0);
-    const status = p.down_seconds > 0 ? "DOWN" : "UP";
-    const pct =
-      known > 0 ? ((100 * (p.up_seconds || 0)) / known).toFixed(2) : "0.00";
+    const ratio = hoverDraw.ratio;
+    const status = ratio >= 1 ? "UP" : ratio <= 0 ? "DOWN" : "PARTIAL";
+    const pct = known > 0 ? (ratio * 100).toFixed(2) : "0.00";
     const startLabel = new Date(p.start).toLocaleString();
     const endLabel = new Date(p.end).toLocaleString();
     el.uptimeTooltip.innerHTML = `${status} ${pct}%<br>${startLabel}<br>${endLabel}<br>up ${p.up_seconds || 0}s | down ${p.down_seconds || 0}s`;
     el.uptimeTooltip.classList.remove("hidden");
 
     const padXCss = 28;
-    const padYCss = 16;
-    const chartWCss = rect.width - padXCss * 2;
-    const chartHCss = rect.height - padYCss * 2;
-    const stepCss =
-      points.length > 1 ? chartWCss / (points.length - 1) : chartWCss;
-    const xCss = padXCss + hoverDraw.idx * stepCss;
-    const yCss = padYCss + (1 - hoverDraw.ratio) * chartHCss;
+    const padYCss = 18;
+    const barStrideCss = 16;
+    const barHCss = 44;
+    const chartHCss = rect.height - padYCss * 2 - 16; // 16 = tickH css
+    const xCss = padXCss + hoverDraw.screenIdx * barStrideCss;
+    const yCss = padYCss + chartHCss / 2 - barHCss / 2;
 
     const tipW = el.uptimeTooltip.offsetWidth || 200;
     const tipH = el.uptimeTooltip.offsetHeight || 70;
@@ -1399,7 +1476,7 @@ async function refreshSelectedProject() {
         `/v1/projects/${projectID}/uptime?window=${encodeURIComponent(state.activeWindow)}`,
       ),
       api(`/v1/projects/${projectID}/routes/health`),
-      api(`/v1/projects/${projectID}/env-vars`),
+      api(`/v1/projects/${projectID}/env-vars`).catch(() => []),
     ]);
 
     if (!state.selectedProject || state.selectedProject.id !== projectID) {
@@ -2305,6 +2382,30 @@ function attachEvents() {
         renderUptimeCanvas();
       }
       hideUptimeTooltip();
+    });
+  }
+
+  const scrollStep = 20;
+  if (el.uptimeScrollLeft) {
+    el.uptimeScrollLeft.addEventListener("click", () => {
+      state.uptimeScrollOffset = Math.max(0, state.uptimeScrollOffset - scrollStep);
+      state.uptimeScrollPinned = false;
+      state.uptimeHoverIndex = null;
+      renderUptimeCanvas();
+    });
+  }
+  if (el.uptimeScrollRight) {
+    el.uptimeScrollRight.addEventListener("click", () => {
+      const points = state.data.uptime?.points || [];
+      const rect = el.uptimeCanvas?.getBoundingClientRect();
+      if (!rect) return;
+      const barStride = 16;
+      const visibleCount = Math.max(1, Math.floor((rect.width - 56) / barStride));
+      const maxOffset = Math.max(0, points.length - visibleCount);
+      state.uptimeScrollOffset = Math.min(maxOffset, state.uptimeScrollOffset + scrollStep);
+      state.uptimeScrollPinned = state.uptimeScrollOffset >= maxOffset;
+      state.uptimeHoverIndex = null;
+      renderUptimeCanvas();
     });
   }
 

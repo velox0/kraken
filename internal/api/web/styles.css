@@ -623,6 +623,45 @@ select:hover, select:focus {
   width: 100%;
   height: 280px;
   cursor: crosshair;
+  display: block;
+}
+
+.uptime-scroll-nav {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 3px;
+}
+
+.uptime-nav-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 17, 23, 0.7);
+  border: 1px solid #2d3343;
+  border-radius: 3px;
+  color: #3d4558;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: not-allowed;
+  padding: 0;
+  transition: color 0.1s, border-color 0.1s, background 0.1s;
+}
+
+.uptime-nav-btn.enabled {
+  color: var(--text-bright);
+  border-color: #4b5563;
+  cursor: pointer;
+}
+
+.uptime-nav-btn.enabled:hover {
+  background: #1f2330;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .uptime-tooltip {
