@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,22 +18,29 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg := config.Load()
 	ctx := context.Background()
 
 	store, err := db.New(ctx, cfg.PostgresURL)
 	if err != nil {
-		log.Fatalf("db init failed: %v", err)
+		return fmt.Errorf("postgres unavailable: %w", err)
 	}
 	defer store.Close()
 
 	q := queue.NewRedis(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
 	defer q.Close()
 	if err := q.Ping(ctx); err != nil {
-		log.Fatalf("redis ping failed: %v", err)
+		return fmt.Errorf("redis unavailable: %w", err)
 	}
 
-	handler := api.NewHandler(store, q, cfg.FixScriptsDir, cfg.UIDir)
+	handler := api.NewHandler(store, q, cfg.FixScriptsDir, cfg.UIDir, nil)
 	srv := &http.Server{
 		Addr:         cfg.APIAddr,
 		Handler:      handler.Router(),
@@ -40,20 +49,28 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	errCh := make(chan error, 1)
 	go func() {
 		log.Printf("api listening on %s", cfg.APIAddr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("api server failed: %v", err)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
 		}
 	}()
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-	<-shutdown
+
+	select {
+	case sig := <-shutdown:
+		log.Printf("received signal %s, shutting down", sig)
+	case err := <-errCh:
+		return fmt.Errorf("api server: %w", err)
+	}
 
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctxTimeout); err != nil {
 		log.Printf("shutdown error: %v", err)
 	}
+	return nil
 }

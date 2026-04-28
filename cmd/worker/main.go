@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -17,19 +18,26 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg := config.Load()
 	ctx := context.Background()
 
 	store, err := db.New(ctx, cfg.PostgresURL)
 	if err != nil {
-		log.Fatalf("db init failed: %v", err)
+		return fmt.Errorf("postgres unavailable: %w", err)
 	}
 	defer store.Close()
 
 	q := queue.NewRedis(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
 	defer q.Close()
 	if err := q.Ping(ctx); err != nil {
-		log.Fatalf("redis ping failed: %v", err)
+		return fmt.Errorf("redis unavailable: %w", err)
 	}
 
 	autofixEngine := autofix.NewEngine(cfg.FixScriptsDir, cfg.AllowedFixCommands)
@@ -49,7 +57,7 @@ func main() {
 		Log:           log.Default(),
 	}
 	if err := runner.Validate(); err != nil {
-		log.Fatalf("worker config invalid: %v", err)
+		return fmt.Errorf("worker config invalid: %w", err)
 	}
 
 	runCtx, cancel := context.WithCancel(context.Background())
@@ -63,4 +71,5 @@ func main() {
 	}()
 
 	runner.Run(runCtx)
+	return nil
 }

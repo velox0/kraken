@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/velox0/kraken/internal/db"
+	"github.com/velox0/kraken/internal/logbuf"
 	"github.com/velox0/kraken/internal/queue"
 )
 
@@ -28,14 +30,16 @@ type Handler struct {
 	queue         *queue.RedisQueue
 	fixScriptsDir string
 	uiDir         string
+	logBuf        *logbuf.Buffer
 }
 
-func NewHandler(store *db.Store, q *queue.RedisQueue, fixScriptsDir, uiDir string) *Handler {
+func NewHandler(store *db.Store, q *queue.RedisQueue, fixScriptsDir, uiDir string, lb *logbuf.Buffer) *Handler {
 	return &Handler{
 		store:         store,
 		queue:         q,
 		fixScriptsDir: fixScriptsDir,
 		uiDir:         uiDir,
+		logBuf:        lb,
 	}
 }
 
@@ -54,6 +58,7 @@ func (h *Handler) Router() http.Handler {
 			r.Get("/auth/me", h.authMe)
 			r.Put("/auth/password", h.changePassword)
 			r.Post("/api_keys", h.createAPIKey)
+			r.Get("/logs/stream", h.streamLogs)
 
 			// Admin user management
 			r.Route("/admin/users", func(admin chi.Router) {
@@ -1043,6 +1048,55 @@ func parseLimit(r *http.Request, fallback int) int {
 		return 500
 	}
 	return parsed
+}
+
+// streamLogs streams the ring buffer snapshot then all new log entries as SSE.
+func (h *Handler) streamLogs(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeError(w, http.StatusInternalServerError, errors.New("streaming not supported"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+	w.WriteHeader(http.StatusOK)
+
+	if h.logBuf != nil {
+		// Replay history as "snapshot" events — frontend renders them but does
+		// not trigger the blink or increment error count.
+		for _, e := range h.logBuf.Snapshot() {
+			writeSSEEvent(w, "snapshot", e)
+		}
+		// Signal end of snapshot so the client knows live streaming has begun.
+		_, _ = fmt.Fprintf(w, "event: ready\ndata: {}\n\n")
+		flusher.Flush()
+
+		// Subscribe to new entries — sent as "log" events (triggers blink).
+		ch := h.logBuf.Subscribe()
+		defer h.logBuf.Unsubscribe(ch)
+
+		ctx := r.Context()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case e, ok := <-ch:
+				if !ok {
+					return
+				}
+				writeSSEEvent(w, "log", e)
+				flusher.Flush()
+			}
+		}
+	}
+}
+
+func writeSSEEvent(w http.ResponseWriter, event string, e logbuf.Entry) {
+	b, _ := json.Marshal(e)
+	_, _ = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event, b)
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {

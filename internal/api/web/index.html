@@ -1558,6 +1558,27 @@
       </main>
     </div>
 
+    <!-- Backend Log Console -->
+    <div id="logConsolePanel" class="log-console hidden">
+      <div class="log-console-header">
+        <span class="log-console-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          Backend Console
+        </span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span id="logConsoleCount" class="log-console-badge hidden">0</span>
+          <button id="logConsoleClearBtn" class="btn ghost" style="padding:2px 8px;font-size:0.75rem">Clear</button>
+          <button id="logConsoleCloseBtn" class="btn ghost" style="padding:2px 8px;font-size:0.75rem">&times;</button>
+        </div>
+      </div>
+      <div id="logConsoleLines" class="log-console-lines"></div>
+    </div>
+
+    <!-- Console toggle button (bottom-right) -->
+    <button id="logConsoleToggleBtn" class="log-console-fab" title="Backend Console" aria-label="Toggle backend console">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+    </button>
+
     <div id="toast" class="toast hidden"></div>
 
     <script src="/app.js" defer></script>

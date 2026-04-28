@@ -2762,3 +2762,181 @@ async function boot() {
 }
 
 boot();
+
+// ── Backend Log Console ──────────────────────────────────────────────────────
+
+const consoleState = {
+  lines: [],        // {time, level, message}[]  — max 100
+  errorCount: 0,
+  open: false,
+  sse: null,
+};
+
+const MAX_CONSOLE_LINES = 100;
+
+const elC = {
+  panel:     () => document.getElementById("logConsolePanel"),
+  lines:     () => document.getElementById("logConsoleLines"),
+  fab:       () => document.getElementById("logConsoleToggleBtn"),
+  badge:     () => document.getElementById("logConsoleCount"),
+  clearBtn:  () => document.getElementById("logConsoleClearBtn"),
+  closeBtn:  () => document.getElementById("logConsoleCloseBtn"),
+};
+
+function fmtConsoleTime(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  } catch (_) {
+    return "";
+  }
+}
+
+function addConsoleLine(entry, countAsNew = true) {
+  consoleState.lines.push(entry);
+  if (consoleState.lines.length > MAX_CONSOLE_LINES) {
+    consoleState.lines.shift();
+  }
+  // Only increment error count (and eventually blink) for live lines,
+  // not for history replayed from the snapshot on connect/reload.
+  if (countAsNew && !consoleState.open && entry.level === "error") {
+    consoleState.errorCount++;
+  }
+
+  const linesEl = elC.lines();
+  if (!linesEl) return;
+
+  const div = document.createElement("div");
+  div.className = `log-line log-${entry.level}`;
+  div.innerHTML =
+    `<span class="log-line-time">${fmtConsoleTime(entry.time)}</span>` +
+    `<span class="log-line-lvl">${escapeHtml(entry.level)}</span>` +
+    escapeHtml(entry.message);
+  linesEl.appendChild(div);
+
+  // Trim DOM to 100 lines too
+  while (linesEl.children.length > MAX_CONSOLE_LINES) {
+    linesEl.removeChild(linesEl.firstChild);
+  }
+
+  // Auto-scroll if panel is open
+  if (consoleState.open) {
+    linesEl.scrollTop = linesEl.scrollHeight;
+  }
+
+  updateConsoleFab();
+}
+
+function updateConsoleFab() {
+  const fab   = elC.fab();
+  const badge = elC.badge();
+  if (!fab) return;
+
+  const hasErrors = consoleState.errorCount > 0;
+  fab.classList.toggle("has-errors", hasErrors && !consoleState.open);
+
+  if (badge) {
+    if (hasErrors && !consoleState.open) {
+      badge.textContent = String(consoleState.errorCount);
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  }
+}
+
+function openConsole() {
+  const panel = elC.panel();
+  const linesEl = elC.lines();
+  if (!panel) return;
+  consoleState.open = true;
+  panel.classList.remove("hidden");
+  // Reset error blink once user opens
+  consoleState.errorCount = 0;
+  updateConsoleFab();
+  if (linesEl) linesEl.scrollTop = linesEl.scrollHeight;
+}
+
+function closeConsole() {
+  const panel = elC.panel();
+  if (!panel) return;
+  consoleState.open = false;
+  panel.classList.add("hidden");
+  updateConsoleFab();
+}
+
+function clearConsole() {
+  consoleState.lines = [];
+  consoleState.errorCount = 0;
+  const linesEl = elC.lines();
+  if (linesEl) linesEl.innerHTML = "";
+  updateConsoleFab();
+}
+
+function startLogStream() {
+  if (consoleState.sse) {
+    consoleState.sse.close();
+    consoleState.sse = null;
+  }
+
+  const sse = new EventSource("/v1/logs/stream");
+  consoleState.sse = sse;
+
+  // History lines replayed on connect — render silently, never blink.
+  sse.addEventListener("snapshot", (ev) => {
+    try {
+      const entry = JSON.parse(ev.data);
+      addConsoleLine(entry, /* countAsNew */ false);
+    } catch (_) {}
+  });
+
+  // Live lines arriving after snapshot — these trigger the blink.
+  sse.addEventListener("log", (ev) => {
+    try {
+      const entry = JSON.parse(ev.data);
+      addConsoleLine(entry, /* countAsNew */ true);
+    } catch (_) {}
+  });
+
+  // "ready" event marks end of snapshot (no action needed).
+  sse.addEventListener("ready", () => {});
+
+  sse.onerror = () => {
+    // EventSource auto-reconnects; snapshot events on reconnect won't blink.
+  };
+}
+
+function stopLogStream() {
+  if (consoleState.sse) {
+    consoleState.sse.close();
+    consoleState.sse = null;
+  }
+}
+
+// Wire up console toggle button
+document.addEventListener("DOMContentLoaded", () => {
+  const fab      = elC.fab();
+  const closeBtn = elC.closeBtn();
+  const clearBtn = elC.clearBtn();
+
+  if (fab) {
+    fab.addEventListener("click", () => {
+      if (consoleState.open) { closeConsole(); } else { openConsole(); }
+    });
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeConsole);
+  }
+  if (clearBtn) {
+    clearBtn.addEventListener("click", clearConsole);
+  }
+});
+
+// Hook into the existing login flow — start streaming once we know we're
+// authenticated (the boot function already calls loadProjects which would fail
+// with 401 if not logged in, so we tie into the login success path).
+const _origBoot = window.__krakenBootDone;
+// We simply attempt to connect; the SSE endpoint requires auth, so it will
+// return 401 and EventSource will not fire onmessage. After login the page
+// reloads / hydrates, so we start unconditionally and rely on the auth cookie.
+startLogStream();
