@@ -1,20 +1,21 @@
 :root {
-  --bg: #0b0e14;
-  --bg-card: #12141c;
-  --bg-card-hover: #161a24;
-  --bg-card-border: #1e222d;
+  --bg: #0b1115;
+  --bg-nav: #0b1115;
+  --bg-card: #10161d;
+  --bg-card-hover: #141c25;
+  --bg-card-border: #1e2835;
   
-  --text: #d1d5db;
-  --text-bright: #f3f4f6;
-  --muted: #6b7280;
+  --text: #94a3b8;
+  --text-bright: #f1f5f9;
+  --muted: #475569;
   
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-2: #3b82f6;
+  --accent: #38bdf8;
+  --accent-hover: #0ea5e9;
+  --accent-2: #38bdf8;
   
-  --ok: #059669;
-  --warn: #d97706;
-  --error: #dc2626;
+  --ok: #10b981;
+  --warn: #f59e0b;
+  --error: #ef4444;
   
   --mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
   --body: "Inter", "Segoe UI", system-ui, sans-serif;
@@ -66,7 +67,7 @@ html, body {
   width: 240px;
   height: 100vh;
   padding: 1rem 0.6rem;
-  background: var(--bg-card);
+  background: var(--bg-nav);
   border-right: 1px solid var(--bg-card-border);
   display: flex;
   flex-direction: column;
@@ -84,8 +85,10 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 0.4rem;
+  padding: 0.2rem 0.4rem 1rem;
   min-height: 40px;
+  border-bottom: 1px solid var(--bg-card-border);
+  margin-bottom: 0.2rem;
 }
 
 .sidebar.collapsed .sidebar-top-row {
@@ -96,23 +99,44 @@ html, body {
   display: none;
 }
 
-.brand-kicker {
-  margin: 0;
-  color: var(--text-bright);
-  font-family: var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  font-weight: 600;
+/* ── Brand System ── */
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
 }
 
-.brand h1 {
-  margin: 0.2rem 0 0;
-  font-family: var(--heading);
-  font-size: 1.1rem;
-  font-weight: 700;
+.brand-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.3));
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.brand-wordmark {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 900;
   color: var(--text-bright);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.14em;
+  line-height: 1.1;
+}
+
+.brand-subtitle {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
 }
 
 .nav-label {
@@ -130,7 +154,7 @@ html, body {
 
 .sidebar-toggle-btn {
   padding: 0.6rem;
-  border-radius: 6px;
+  border-radius: 4px;
   color: var(--muted);
   transition: all 0.2s ease;
   flex-shrink: 0;
@@ -169,7 +193,7 @@ html, body {
   gap: 0.8rem;
   padding: 0.75rem 0.8rem;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: var(--text);
   font-family: var(--heading);
@@ -200,20 +224,20 @@ html, body {
 
 /* Active nav state */
 .nav-btn.active {
-  background: rgba(37, 99, 235, 0.1);
-  color: var(--accent-2);
-  border-color: rgba(37, 99, 235, 0.15);
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--text-bright);
+  border-color: rgba(56, 189, 248, 0.15);
 }
 
 .nav-btn.active svg {
   opacity: 1;
-  stroke: var(--accent-2);
+  stroke: var(--accent);
 }
 
 .sidebar-footer {
   margin-top: auto;
   padding: 0.8rem;
-  border-radius: 6px;
+  border-radius: 4px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--bg-card-border);
   overflow: hidden;
@@ -281,7 +305,7 @@ html, body {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: var(--bg);
+  background: var(--bg-nav);
   border-bottom: 1px solid var(--bg-card-border);
 }
 
@@ -475,7 +499,7 @@ select:hover, select:focus {
   gap: 1rem;
 }
 
-/* Sharp cards, no hover lift */
+/* Cards with hover elevation */
 .metric-card {
   display: flex;
   align-items: center;
@@ -484,6 +508,12 @@ select:hover, select:focus {
   border: 1px solid var(--bg-card-border);
   border-radius: 4px;
   padding: 1.2rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  border-color: #2a3545;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .metric-icon-wrap {
@@ -560,6 +590,11 @@ select:hover, select:focus {
   display: flex;
   flex-direction: column;
   height: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.panel-card:hover {
+  border-color: #2a3545;
 }
 
 .panel-card-title {
@@ -1145,7 +1180,7 @@ textarea {
 
 .sub-tab-badge {
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 0.68rem;
   font-weight: 700;
   background: var(--accent);
@@ -1468,7 +1503,7 @@ textarea {
   z-index: 200;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: 4px;
   background: #1a1e2e;
   border: 1px solid #2d3343;
   color: var(--muted);
@@ -1507,7 +1542,7 @@ textarea {
   max-width: calc(100vw - 3rem);
   background: #0d1017;
   border: 1px solid #1e222d;
-  border-radius: 8px;
+  border-radius: 4px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.6);
   display: flex;
   flex-direction: column;

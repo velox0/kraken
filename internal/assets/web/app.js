@@ -157,6 +157,7 @@ const el = {
   envVarValue: document.getElementById("envVarValue"),
   envVarIsSecret: document.getElementById("envVarIsSecret"),
   envVarsList: document.getElementById("envVarsList"),
+  resetDefaultEnvBtn: document.getElementById("resetDefaultEnvBtn"),
 };
 
 function setCookie(name, value, days) {
@@ -379,7 +380,12 @@ function pickUptimeHoverIndex(clientX) {
   const chartW = rect.width - padX * 2;
   if (chartW <= 0) return null;
 
-  const barStride = 16;
+  const defaultBarStride = 16;
+  const defaultVisibleCount = Math.max(1, Math.floor(chartW / defaultBarStride));
+  const barStride = points.length < defaultVisibleCount
+    ? Math.max(defaultBarStride, chartW / Math.max(1, points.length))
+    : defaultBarStride;
+
   const x = clientX - rect.left - padX;
   if (x < 0 || x > chartW) return null;
 
@@ -476,8 +482,8 @@ function renderPathHealthPanel() {
   const runs = state.data.pathRuns || [];
   el.pathLogsList.innerHTML = runs.length
     ? runs
-        .map(
-          (run) => `
+      .map(
+        (run) => `
           <div class="list-item">
             <div class="main">
               <strong class="status-${run.status === "healthy" ? "ok" : "error"}">${escapeHtml(run.status.toUpperCase())}</strong>
@@ -486,8 +492,8 @@ function renderPathHealthPanel() {
             </div>
           </div>
         `,
-        )
-        .join("")
+      )
+      .join("")
     : `<div class="list-item"><div class="main">No logs for selected route</div></div>`;
 }
 
@@ -601,8 +607,8 @@ function renderDashboard() {
 
   el.checksList.innerHTML = state.data.checks.length
     ? state.data.checks
-        .map(
-          (c, idx) => `
+      .map(
+        (c, idx) => `
           <div class="list-item">
             <div class="main">
               <strong>Check #${idx + 1} (${escapeHtml(c.type.toUpperCase())})</strong>
@@ -610,14 +616,14 @@ function renderDashboard() {
               <span class="meta">timeout ${c.timeout_ms}ms | ${summarizeAssertions(c.assertions)}</span>
             </div>
           </div>`,
-        )
-        .join("")
+      )
+      .join("")
     : `<div class="list-item"><div class="main">No checks configured</div></div>`;
 
   el.incidentsList.innerHTML = state.data.incidents.length
     ? state.data.incidents
-        .map(
-          (i) => `
+      .map(
+        (i) => `
           <div class="list-item">
             <div class="main">
               <strong class="status-${i.status === "open" ? "down" : "up"}">${escapeHtml(i.status.toUpperCase())}</strong>
@@ -625,14 +631,14 @@ function renderDashboard() {
               <span class="meta">started ${fmt(i.started_at)}${i.resolved_at ? ` | resolved ${fmt(i.resolved_at)}` : ""}</span>
             </div>
           </div>`,
-        )
-        .join("")
+      )
+      .join("")
     : `<div class="list-item"><div class="main">No incidents</div></div>`;
 
   el.fixesList.innerHTML = state.data.fixes.length
     ? state.data.fixes
-        .map(
-          (f) => `
+      .map(
+        (f) => `
           <div class="list-item">
             <div class="main" style="gap:0.1rem;">
               <strong style="font-size:1rem;">${escapeHtml(f.name)}</strong>
@@ -649,8 +655,8 @@ function renderDashboard() {
               </button>
             </div>
           </div>`,
-        )
-        .join("")
+      )
+      .join("")
     : `<div class="list-item"><div class="main">No fixes attached</div></div>`;
 
   renderPathHealthPanel();
@@ -700,8 +706,8 @@ function renderUptimeCanvas() {
 
   // Background
   const bg = ctx.createLinearGradient(0, 0, 0, height);
-  bg.addColorStop(0, "rgba(21, 26, 45, 0.9)");
-  bg.addColorStop(1, "rgba(11, 15, 25, 0.95)");
+  bg.addColorStop(0, "rgba(11, 17, 21, 0.0)");
+  bg.addColorStop(1, "rgba(11, 17, 21, 0.0)");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
@@ -735,7 +741,13 @@ function renderUptimeCanvas() {
   // --- Virtual scroll ---
   const barW = 10 * dpr;
   const barH = 44 * dpr;
-  const barStride = 16 * dpr;
+  const defaultBarStride = 16 * dpr;
+  const defaultVisibleCount = Math.max(1, Math.floor(chartW / defaultBarStride));
+
+  // If fewer points than can fit, spread bars across the full width
+  const barStride = points.length < defaultVisibleCount
+    ? Math.max(defaultBarStride, chartW / Math.max(1, points.length))
+    : defaultBarStride;
   const visibleCount = Math.max(1, Math.floor(chartW / barStride));
   const maxOffset = Math.max(0, points.length - visibleCount);
 
@@ -780,7 +792,7 @@ function renderUptimeCanvas() {
     let color;
     if (known <= 0) {
       // Unknown bucket — draw dim placeholder
-      color = "rgba(40, 48, 70, 0.6)";
+      color = "rgba(30, 40, 53, 0.6)";
       const roundedX = Math.floor(x);
       const roundedY = Math.floor(barY);
       const roundedW = Math.ceil(barW);
@@ -788,14 +800,17 @@ function renderUptimeCanvas() {
       const radius = Math.min(2.5 * dpr, roundedW / 2, roundedH / 2);
       drawRoundedRect(roundedX, roundedY, roundedW, roundedH, radius);
       ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
       ctx.fill();
+      ctx.shadowBlur = 0;
     } else {
       const ratio = Math.max(0, Math.min(1, p.uptime_ratio ?? 0));
       if (ratio >= 1) {
         color = "rgba(16, 185, 129, 0.9)";
       } else {
         const hue = Math.floor(ratio * 55);
-        color = `hsla(${hue}, 85%, 55%, 0.9)`;
+        color = `hsla(${hue}, 90%, 65%, 1)`;
       }
 
       const roundedX = Math.floor(x);
@@ -805,7 +820,10 @@ function renderUptimeCanvas() {
       const radius = Math.min(2.5 * dpr, roundedW / 2, roundedH / 2);
       drawRoundedRect(roundedX, roundedY, roundedW, roundedH, radius);
       ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
       ctx.fill();
+      ctx.shadowBlur = 0;
 
       if (state.uptimeHoverIndex === dataIdx) {
         hoverDraw = { idx: dataIdx, screenIdx: i, point: p, ratio, x, y: barY };
@@ -831,8 +849,8 @@ function renderUptimeCanvas() {
   }
 
   // --- Vignette overlays (edge-to-edge, fade top+bottom via temp canvas) ---
-  const vigW = 54 * dpr;
-  const vigColorStop = "rgba(11, 15, 25, 0.93)";
+  const vigW = 150 * dpr;
+  const vigColorStop = "rgba(6, 8, 12, 1)";
 
   const drawVignetteEdge = (fromX, toX, side) => {
     // Create an offscreen canvas for compositing
@@ -951,12 +969,12 @@ function renderUptimePanel() {
 
   el.runsList.innerHTML = state.data.runs.length
     ? state.data.runs
-        .slice(0, 120)
-        .map((r) => {
-          const cIdx =
-            state.data.checks.findIndex((c) => c.id === r.check_id) + 1;
-          const cLabel = cIdx > 0 ? `#${cIdx}` : `(deleted)`;
-          return `
+      .slice(0, 120)
+      .map((r) => {
+        const cIdx =
+          state.data.checks.findIndex((c) => c.id === r.check_id) + 1;
+        const cLabel = cIdx > 0 ? `#${cIdx}` : `(deleted)`;
+        return `
           <div class="list-item">
             <div class="main">
               <strong class="status-${r.status === "healthy" ? "ok" : "error"}">${escapeHtml(r.status.toUpperCase())}</strong>
@@ -964,15 +982,15 @@ function renderUptimePanel() {
               <span class="meta">${fmt(r.created_at)}</span>
             </div>
           </div>`;
-        })
-        .join("")
+      })
+      .join("")
     : `<div class="list-item"><div class="main">No check runs yet</div></div>`;
 
   el.logsList.innerHTML = state.data.logs.length
     ? state.data.logs
-        .slice(0, 150)
-        .map(
-          (l) => `
+      .slice(0, 150)
+      .map(
+        (l) => `
           <div class="list-item">
             <div class="main">
               <strong class="status-${l.level === "error" ? "error" : l.level === "warn" ? "warn" : "ok"}">[${escapeHtml(l.level)}]</strong>
@@ -980,8 +998,8 @@ function renderUptimePanel() {
               <span class="meta">${fmt(l.timestamp)}</span>
             </div>
           </div>`,
-        )
-        .join("")
+      )
+      .join("")
     : `<div class="list-item"><div class="main">No logs yet</div></div>`;
 
   if (state.activeView === "uptimeView") {
@@ -1057,13 +1075,13 @@ function renderSettingsChecksRows(checks) {
   const rows = Array.isArray(checks) ? checks : [];
   el.settingsChecksRows.innerHTML = rows.length
     ? rows
-        .map((check) => {
-          const selectedType = (type) =>
-            check.type === type ? "selected" : "";
-          const assertions = Array.isArray(check.assertions)
-            ? check.assertions
-            : [];
-          return `
+      .map((check) => {
+        const selectedType = (type) =>
+          check.type === type ? "selected" : "";
+        const assertions = Array.isArray(check.assertions)
+          ? check.assertions
+          : [];
+        return `
             <div class="settings-check-row" data-check-id="${check.id || ""}">
               <div class="cell">
                 <span class="label">Type</span>
@@ -1093,8 +1111,8 @@ function renderSettingsChecksRows(checks) {
               </div>
             </div>
           `;
-        })
-        .join("")
+      })
+      .join("")
     : "";
 }
 
@@ -1218,16 +1236,16 @@ function renderSettingsForm() {
   if (el.smtpProfilesList) {
     el.smtpProfilesList.innerHTML = smtpProfiles.length
       ? smtpProfiles
-          .map(
-            (profile) => `
+        .map(
+          (profile) => `
           <div class="list-item">
             <div class="main">
               <strong>#${profile.id} ${escapeHtml(profile.from_email)}</strong>
               <span class="meta">${escapeHtml(profile.host)}:${profile.port} | ${escapeHtml(profile.username)}</span>
             </div>
           </div>`,
-          )
-          .join("")
+        )
+        .join("")
       : `<div class="list-item"><div class="main">No SMTP profiles saved</div></div>`;
   }
 
@@ -1852,6 +1870,20 @@ function editEnvVar(name, isSecret) {
   }
 }
 
+async function resetDefaultEnvVars() {
+  if (!state.selectedProject) return;
+  if (!confirm("Reset default environment variables (HOME, TERM) to their system defaults? Custom variables will not be affected.")) return;
+  try {
+    await api(`/v1/projects/${state.selectedProject.id}/env-vars/reset-defaults`, {
+      method: "POST",
+    });
+    showToast("Default environment variables reset");
+    await refreshSelectedProject();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+
 // ---------- Sub-Tab Switching ----------
 
 function initSubTabs(containerEl) {
@@ -2142,6 +2174,7 @@ function attachEvents() {
 
   if (el.fixUploadForm) el.fixUploadForm.addEventListener("submit", uploadFix);
   if (el.envVarForm) el.envVarForm.addEventListener("submit", saveEnvVar);
+  if (el.resetDefaultEnvBtn) el.resetDefaultEnvBtn.addEventListener("click", resetDefaultEnvVars);
   if (el.envVarsList) {
     el.envVarsList.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("button[data-edit-env-name]");
@@ -2474,7 +2507,7 @@ function bindAuthEvents() {
     logoutBtn.addEventListener("click", async () => {
       try {
         await api("/v1/logout", { method: "POST" });
-      } catch (_) {}
+      } catch (_) { }
       location.reload();
     });
   }
@@ -2775,12 +2808,12 @@ const consoleState = {
 const MAX_CONSOLE_LINES = 100;
 
 const elC = {
-  panel:     () => document.getElementById("logConsolePanel"),
-  lines:     () => document.getElementById("logConsoleLines"),
-  fab:       () => document.getElementById("logConsoleToggleBtn"),
-  badge:     () => document.getElementById("logConsoleCount"),
-  clearBtn:  () => document.getElementById("logConsoleClearBtn"),
-  closeBtn:  () => document.getElementById("logConsoleCloseBtn"),
+  panel: () => document.getElementById("logConsolePanel"),
+  lines: () => document.getElementById("logConsoleLines"),
+  fab: () => document.getElementById("logConsoleToggleBtn"),
+  badge: () => document.getElementById("logConsoleCount"),
+  clearBtn: () => document.getElementById("logConsoleClearBtn"),
+  closeBtn: () => document.getElementById("logConsoleCloseBtn"),
 };
 
 function fmtConsoleTime(iso) {
@@ -2828,7 +2861,7 @@ function addConsoleLine(entry, countAsNew = true) {
 }
 
 function updateConsoleFab() {
-  const fab   = elC.fab();
+  const fab = elC.fab();
   const badge = elC.badge();
   if (!fab) return;
 
@@ -2887,7 +2920,7 @@ function startLogStream() {
     try {
       const entry = JSON.parse(ev.data);
       addConsoleLine(entry, /* countAsNew */ false);
-    } catch (_) {}
+    } catch (_) { }
   });
 
   // Live lines arriving after snapshot — these trigger the blink.
@@ -2895,11 +2928,11 @@ function startLogStream() {
     try {
       const entry = JSON.parse(ev.data);
       addConsoleLine(entry, /* countAsNew */ true);
-    } catch (_) {}
+    } catch (_) { }
   });
 
   // "ready" event marks end of snapshot (no action needed).
-  sse.addEventListener("ready", () => {});
+  sse.addEventListener("ready", () => { });
 
   sse.onerror = () => {
     // EventSource auto-reconnects; snapshot events on reconnect won't blink.
@@ -2915,7 +2948,7 @@ function stopLogStream() {
 
 // Wire up console toggle button
 document.addEventListener("DOMContentLoaded", () => {
-  const fab      = elC.fab();
+  const fab = elC.fab();
   const closeBtn = elC.closeBtn();
   const clearBtn = elC.clearBtn();
 

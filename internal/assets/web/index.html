@@ -1,1586 +1,1026 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kraken Control Plane</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside id="sidebar" class="sidebar">
-        <div class="sidebar-top-row">
-          <div class="brand">
-            <p class="brand-kicker">Kraken</p>
-            <h1 class="nav-label">Control Plane</h1>
-          </div>
-          <button
-            id="closeSidebarBtn"
-            class="btn ghost sidebar-toggle-btn"
-            aria-label="Toggle sidebar"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6"></polyline>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kraken Control Plane</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-top-row">
+        <div class="brand">
+          <div class="brand-mark">
+            <svg class="brand-icon" width="28" height="28" viewBox="0 0 600.000000 666.000000"
+              preserveAspectRatio="xMidYMid meet">
+              <g transform="translate(0.000000,666.000000) scale(0.050000,-0.050000)" fill="currentColor" stroke="none">
+                <path
+                  d="M5570 13030 c-1794 -256 -3035 -1668 -3035 -3450 0 -577 82 -940 360 -1590 322 -753 278 -1176 -195 -1880 -199 -296 -210 -340 -107 -430 85 -74 77 -84 -95 -120 -513 -109 -698 201 -570 953 78 454 62 650 -78 943 -252 531 -1005 766 -1349 422 -129 -129 -83 -211 167 -301 437 -157 504 -529 235 -1307 -343 -992 61 -1842 1037 -2183 l130 -45 14 -166 c7 -91 28 -206 46 -256 l32 -90 -64 -54 c-484 -407 -1172 -300 -1482 231 -202 345 -467 -114 -318 -552 265 -785 1327 -1211 2198 -883 71 26 131 48 134 48 3 0 52 -83 109 -185 874 -1573 2709 -2318 4366 -1774 893 293 1644 916 2110 1749 62 110 115 204 119 208 3 5 76 -15 161 -45 851 -295 1779 29 2124 742 245 506 15 1081 -265 660 -321 -484 -896 -587 -1398 -251 -147 98 -144 89 -96 259 22 81 40 197 40 260 l0 113 76 13 c339 58 814 416 1027 774 268 451 284 824 66 1498 -247 765 -149 1122 349 1267 419 122 -25 492 -496 412 -672 -113 -989 -691 -844 -1540 124 -732 -139 -1120 -644 -948 l-92 31 79 75 c108 103 106 162 -11 326 -620 867 -682 1206 -363 1992 429 1056 483 1841 190 2762 -486 1528 -2088 2538 -3667 2312z m1090 -249 c1577 -347 2531 -1561 2530 -3221 -1 -642 -48 -847 -377 -1651 -270 -658 -183 -1189 307 -1869 152 -211 173 -284 109 -369 -117 -156 115 -387 382 -380 528 15 779 479 661 1223 -61 383 -33 723 70 869 21 29 38 62 38 72 0 142 579 422 734 354 20 -8 44 -16 54 -17 24 -2 41 -52 19 -52 -18 -1 -101 -70 -233 -194 -260 -244 -285 -624 -83 -1246 216 -665 178 -1065 -141 -1490 -167 -221 -365 -363 -735 -528 -74 -33 -135 -70 -135 -83 0 -13 -14 -18 -31 -11 -17 6 -26 3 -20 -7 7 -10 3 -23 -7 -30 -11 -6 -23 4 -29 24 -5 19 -7 2 -4 -39 3 -41 -2 -70 -11 -65 -18 12 -58 -117 -58 -191 0 -27 -14 -94 -30 -148 -89 -292 174 -573 635 -682 385 -91 888 80 1095 370 113 159 164 -56 64 -274 -304 -664 -1152 -944 -1979 -653 -122 43 -119 33 -55 211 63 176 57 336 -14 336 -10 0 -12 -11 -3 -25 10 -17 3 -16 -20 3 -19 15 -29 32 -23 38 20 21 -57 84 -103 84 -26 0 -133 -23 -239 -50 -223 -58 -536 -58 -723 -1 -139 43 -347 142 -331 158 7 7 2 13 -10 13 -12 0 -44 31 -70 70 -26 38 -51 66 -56 61 -4 -4 -5 45 -1 109 9 163 48 180 406 180 443 1 903 175 977 371 11 27 31 49 47 49 37 0 185 219 211 311 37 135 -118 590 -195 574 -14 -4 -20 4 -13 15 19 30 -212 414 -318 529 -48 53 -104 128 -123 168 -20 40 -74 105 -120 143 -46 39 -123 118 -172 176 -58 70 -98 102 -121 97 -19 -5 -33 1 -30 13 2 13 -16 32 -41 43 -25 11 -41 32 -36 47 7 16 -3 23 -24 20 -21 -4 -33 5 -29 21 4 18 -6 24 -25 16 -17 -6 -31 -4 -31 6 0 25 -321 232 -530 342 -99 52 -247 131 -330 175 -690 368 -2047 362 -2720 -14 -71 -39 -174 -92 -230 -116 -55 -24 -98 -53 -95 -64 2 -11 -9 -15 -25 -9 -16 6 -77 -20 -135 -57 -58 -38 -184 -117 -280 -175 -177 -108 -204 -128 -140 -109 19 6 2 -8 -39 -31 -40 -22 -88 -61 -105 -85 -17 -25 -31 -36 -31 -26 0 11 -72 -52 -159 -139 -87 -87 -154 -165 -149 -175 6 -9 -3 -16 -19 -16 -35 0 -133 -111 -133 -151 0 -15 -18 -37 -40 -49 -22 -12 -58 -57 -80 -101 -23 -43 -48 -79 -56 -79 -22 0 -144 -229 -145 -273 -2 -34 -3 -34 -19 3 -17 39 -17 39 -19 -2 0 -23 -24 -77 -53 -119 -170 -250 -228 -512 -148 -670 60 -118 218 -303 245 -286 12 7 15 4 8 -8 -35 -56 344 -276 577 -335 80 -20 207 -30 380 -29 358 3 425 -28 404 -185 -48 -359 -735 -569 -1258 -385 -143 51 -285 26 -272 -47 3 -19 -4 -36 -14 -38 -11 -2 -17 12 -14 30 3 19 -18 -5 -48 -54 l-54 -87 54 -180 c63 -211 61 -216 -115 -273 -562 -181 -1006 -119 -1505 211 -56 37 -115 68 -130 69 -15 0 -18 5 -7 10 12 5 -20 55 -72 111 -136 148 -227 337 -235 489 -10 166 4 167 173 8 458 -429 1101 -447 1547 -44 146 132 158 190 103 518 -48 289 -95 345 -421 506 -824 406 -1060 1006 -760 1930 251 775 187 1163 -241 1445 -130 86 96 138 316 73 474 -140 639 -567 528 -1364 -63 -452 -19 -667 180 -878 257 -273 605 -294 838 -50 82 85 82 82 42 277 -11 54 2 87 80 208 522 807 574 1280 230 2079 -285 662 -346 958 -334 1600 9 409 15 470 65 670 31 121 56 244 56 274 0 30 6 51 13 47 7 -4 34 48 60 115 107 280 288 598 478 840 68 88 84 121 65 133 -17 10 -19 21 -6 29 11 7 25 1 30 -13 6 -16 34 -1 81 44 40 37 69 72 64 77 -32 31 447 397 719 549 664 370 1581 513 2290 356z m-104 -5972 c1227 -185 2317 -1054 2703 -2157 l62 -177 -54 -93 c-213 -365 -705 -567 -1173 -481 -438 81 -639 -415 -308 -758 301 -311 1025 -402 1455 -182 l84 42 -14 -55 c-71 -284 -328 -788 -557 -1093 -1571 -2093 -4721 -1791 -5879 565 -106 216 -246 580 -224 580 6 0 47 -19 91 -41 419 -214 1078 -138 1404 161 384 351 213 856 -265 782 -492 -77 -997 136 -1190 503 l-39 74 46 145 c256 800 975 1576 1757 1895 85 35 182 76 215 91 465 209 1258 293 1886 199z" />
+                <path
+                  d="M4370 9427 c-138 -17 -312 -74 -338 -111 -15 -21 -31 -30 -35 -19 -26 73 -436 -306 -535 -494 -505 -960 599 -2037 1530 -1493 150 87 502 450 438 450 -7 0 1 14 18 31 94 93 148 565 90 779 -138 510 -688 914 -1168 857z m252 -227 c432 -80 757 -471 757 -910 0 -817 -1003 -1228 -1575 -646 -627 637 -59 1719 818 1556z" />
+                <path
+                  d="M4540 8710 c-373 -120 -485 -661 -195 -945 329 -322 835 -70 835 415 l0 130 -51 -55 c-127 -137 -329 -58 -329 128 0 98 81 197 161 197 81 0 58 48 -48 98 -114 55 -263 68 -373 32z m32 -245 c12 -8 27 -55 34 -105 6 -49 21 -92 33 -96 11 -4 21 -18 21 -31 0 -14 36 -64 80 -113 44 -49 80 -81 80 -72 0 9 17 -5 38 -31 99 -122 -129 -224 -307 -137 -180 87 -216 390 -65 555 45 49 53 52 86 30z" />
+                <path
+                  d="M7340 9418 c-316 -54 -676 -327 -841 -639 l-89 -169 0 -310 c0 -442 131 -701 476 -937 181 -124 253 -152 489 -188 247 -39 792 119 770 222 -4 14 3 21 13 14 59 -37 328 315 406 531 268 747 -445 1607 -1224 1476z m344 -220 c853 -177 1006 -1343 226 -1730 -784 -388 -1613 432 -1237 1226 173 367 614 586 1011 504z" />
+                <path
+                  d="M7160 8710 c-363 -116 -480 -620 -214 -922 343 -389 900 -76 856 482 -3 37 -5 37 -24 5 -93 -161 -358 -77 -358 115 0 91 89 190 170 190 142 0 -70 131 -240 149 -61 6 -135 -1 -190 -19z m60 -288 c0 -116 42 -197 160 -314 137 -135 146 -173 55 -228 -123 -75 -307 -26 -383 102 -33 56 -45 402 -13 392 6 -2 34 20 62 48 67 68 119 68 119 0z" />
+                <path
+                  d="M4610 6525 c-46 -110 -29 -242 48 -365 10 -16 43 -91 73 -164 30 -74 61 -131 69 -126 9 5 20 -8 26 -30 6 -24 2 -35 -10 -28 -11 7 -8 -9 7 -35 14 -26 46 -96 70 -157 23 -60 52 -108 64 -105 12 2 17 -7 12 -21 -21 -54 176 -195 217 -155 15 14 -69 215 -341 811 -207 455 -204 450 -235 375z" />
+                <path
+                  d="M7252 6418 c-487 -1062 -504 -1107 -409 -1075 88 29 204 138 177 165 -26 26 -26 58 1 42 11 -8 49 48 86 129 36 78 70 137 76 131 6 -5 9 10 7 35 -2 25 3 50 11 55 54 38 202 450 190 531 -24 157 -62 154 -139 -13z" />
+                <path
+                  d="M5690 5426 c-33 -5 -132 -27 -220 -49 -88 -23 -181 -46 -206 -52 -416 -93 -980 -618 -1162 -1081 -52 -130 -52 -124 4 -124 272 0 528 -396 474 -732 -38 -230 -307 -636 -382 -575 -21 17 -65 5 -188 -52 -88 -41 -356 -163 -595 -271 -472 -213 -472 -213 -358 -247 120 -36 301 -9 271 40 -7 11 0 17 16 13 29 -7 79 14 446 180 132 60 243 117 247 127 3 9 14 13 23 7 9 -6 49 27 88 73 40 46 75 80 79 75 3 -4 36 -52 73 -106 143 -212 374 -401 713 -585 124 -67 181 -117 132 -117 -97 0 -219 -168 -307 -420 -15 -44 -33 -84 -40 -90 -6 -5 -45 -82 -86 -170 -40 -88 -82 -175 -92 -193 -39 -72 -43 -169 -9 -254 l35 -86 128 266 c71 147 201 427 290 622 88 195 168 355 177 355 10 0 75 54 146 120 295 276 521 720 584 1147 15 103 23 90 60 -105 79 -419 245 -725 559 -1032 l184 -180 225 -490 c287 -622 318 -684 342 -669 11 6 15 19 9 29 -6 9 1 20 14 25 33 11 31 213 -3 234 -14 9 -21 26 -14 37 7 11 -1 25 -17 31 -17 7 -28 19 -25 27 8 25 -102 259 -135 286 -16 13 -25 32 -20 41 33 53 -159 383 -255 438 l-98 56 171 91 c308 164 487 318 736 635 54 68 55 68 68 22 9 -31 18 -38 29 -22 10 17 19 11 28 -18 9 -27 60 -65 137 -102 241 -113 644 -287 669 -287 14 0 25 -7 25 -15 0 -32 123 -59 165 -36 34 18 39 16 30 -8 -9 -24 5 -22 69 9 95 46 93 49 -114 142 -652 296 -985 435 -1025 428 -53 -10 -206 141 -290 286 -232 402 -78 902 310 1003 52 13 95 30 95 36 -2 54 -69 205 -160 360 -385 655 -1236 1039 -2050 927z m806 -256 c114 -27 222 -50 240 -50 19 0 91 -27 161 -60 70 -33 136 -54 148 -47 12 7 15 4 8 -8 -8 -13 21 -41 67 -67 44 -25 80 -54 80 -65 0 -11 5 -14 12 -8 7 7 53 -27 102 -76 50 -49 100 -83 111 -76 12 8 15 4 7 -9 -15 -26 66 -148 89 -133 8 5 20 -5 27 -22 8 -21 4 -26 -13 -16 -13 8 5 -24 40 -73 82 -110 81 -151 0 -235 -49 -51 -55 -64 -25 -54 30 10 33 8 12 -7 -16 -11 -39 -16 -52 -11 -26 10 -103 -91 -93 -123 4 -11 0 -14 -7 -6 -21 20 -79 -42 -143 -154 -55 -96 -57 -111 -57 -361 l0 -261 78 -159 c43 -87 84 -163 91 -169 41 -31 121 -159 120 -192 0 -51 -93 -154 -122 -136 -15 9 -18 5 -7 -12 13 -21 -150 -200 -184 -200 -5 0 -38 -22 -73 -49 -206 -157 -307 -162 -449 -22 -60 61 -119 104 -130 97 -12 -7 -14 -2 -6 12 9 13 -15 69 -53 128 -76 116 -156 283 -195 404 -14 44 -31 89 -37 100 -7 11 -14 35 -17 52 -17 109 -146 290 -181 255 -14 -14 -25 -13 -36 4 -10 16 -7 20 8 11 13 -8 23 -6 23 5 0 43 -62 41 -79 -2 -10 -25 -19 -32 -20 -17 -4 104 -145 -120 -226 -358 -116 -342 -394 -759 -529 -793 -29 -7 -82 3 -132 26 -45 20 -87 37 -93 36 -6 0 -24 11 -41 24 -16 14 -84 65 -150 115 -209 156 -417 382 -318 344 30 -12 33 -9 13 11 -14 14 -25 34 -25 46 0 12 8 10 17 -4 36 -58 221 227 286 442 111 362 -42 768 -376 1002 -23 17 -47 53 -52 81 -5 28 -5 47 1 41 21 -21 108 133 97 173 -10 39 -9 39 31 3 40 -36 40 -36 32 3 -5 25 12 59 43 90 28 28 54 60 57 70 4 11 19 17 35 14 17 -3 24 5 18 21 -6 16 23 46 70 76 48 29 81 65 82 89 1 22 7 29 12 16 7 -18 28 -12 73 19 35 25 68 48 73 51 6 3 -2 13 -16 22 -17 11 -7 16 30 16 31 0 107 19 167 41 119 44 417 114 610 144 192 30 534 8 766 -49z" />
+                <path
+                  d="M2881 4912 l-70 -25 50 -32 c27 -18 171 -86 319 -151 149 -65 406 -178 572 -251 377 -166 379 -166 320 -24 -16 37 -23 74 -15 81 7 8 0 12 -17 9 -16 -3 -102 29 -190 70 -352 165 -409 190 -458 202 -29 7 -47 21 -41 31 6 10 -4 12 -22 5 -18 -7 -39 -4 -46 6 -53 77 -283 122 -402 79z" />
+                <path
+                  d="M8821 4899 c-49 -22 -101 -51 -117 -64 -15 -13 -44 -26 -63 -28 -19 -3 -97 -34 -173 -69 -76 -36 -147 -66 -158 -69 -234 -57 -550 -322 -412 -345 51 -9 1007 409 1171 512 l80 50 -90 27 c-116 35 -133 34 -238 -14z" />
+              </g>
             </svg>
+            <div class="brand-text">
+              <h1 class="brand-wordmark">KRAKEN</h1>
+              <p class="brand-subtitle">Control Plane</p>
+            </div>
+          </div>
+        </div>
+        <button id="closeSidebarBtn" class="btn ghost sidebar-toggle-btn" aria-label="Toggle sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="side-nav" aria-label="Project views">
+        <button class="nav-btn active" data-view="dashboardView">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9"></rect>
+            <rect x="14" y="3" width="7" height="5"></rect>
+            <rect x="14" y="12" width="7" height="9"></rect>
+            <rect x="3" y="16" width="7" height="5"></rect>
+          </svg>
+          <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-view="fixesView">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+            </path>
+          </svg>
+          <span class="nav-label">Fixes</span>
+        </button>
+        <button class="nav-btn" data-view="uptimeView">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span class="nav-label">Uptime</span>
+        </button>
+        <button id="adminNavBtn" class="nav-btn hidden" data-view="adminView">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span class="nav-label">Admin</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="live-row">
+          <span id="liveDot" class="live-dot"></span>
+          <span id="liveText">Live updates on</span>
+        </div>
+        <p id="lastUpdatedText" class="muted">Last updated: never</p>
+        <p id="currentUserEmail" class="muted" style="font-size: 0.78rem"></p>
+        <div style="display: flex; gap: 6px; margin-top: 4px">
+          <button id="changePwBtn" class="btn ghost" style="font-size: 0.75rem; padding: 3px 8px">
+            Password
+          </button>
+          <button id="logoutBtn" class="btn ghost" style="font-size: 0.75rem; padding: 3px 8px">
+            Logout
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="project-switch">
+          <select id="projectSelect" aria-label="Select project"></select>
+          <button id="openCreateBtn" class="btn primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Project
           </button>
         </div>
 
-        <nav class="side-nav" aria-label="Project views">
-          <button class="nav-btn active" data-view="dashboardView">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="3" y="3" width="7" height="9"></rect>
-              <rect x="14" y="3" width="7" height="5"></rect>
-              <rect x="14" y="12" width="7" height="9"></rect>
-              <rect x="3" y="16" width="7" height="5"></rect>
+        <div class="topbar-actions">
+          <button id="refreshBtn" class="btn secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
-            <span class="nav-label">Dashboard</span>
+            Refresh
           </button>
-          <button class="nav-btn" data-view="fixesView">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+          <button id="runNowBtn" class="btn secondary" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Run Checks
+          </button>
+          <button id="toggleAutofixBtn" class="btn secondary" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
               <path
-                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
-              ></path>
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+              </path>
             </svg>
-            <span class="nav-label">Fixes</span>
+            Autofix
           </button>
-          <button class="nav-btn" data-view="uptimeView">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          <button id="deleteProjectBtn" class="btn danger" disabled>
+            Delete
+          </button>
+          <button id="openSettingsBtn" class="btn secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+              </path>
             </svg>
-            <span class="nav-label">Uptime</span>
+            Settings
           </button>
-          <button id="adminNavBtn" class="nav-btn hidden" data-view="adminView">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            <span class="nav-label">Admin</span>
-          </button>
-        </nav>
-
-        <div class="sidebar-footer">
-          <div class="live-row">
-            <span id="liveDot" class="live-dot"></span>
-            <span id="liveText">Live updates on</span>
-          </div>
-          <p id="lastUpdatedText" class="muted">Last updated: never</p>
-          <p id="currentUserEmail" class="muted" style="font-size: 0.78rem"></p>
-          <div style="display: flex; gap: 6px; margin-top: 4px">
-            <button
-              id="changePwBtn"
-              class="btn ghost"
-              style="font-size: 0.75rem; padding: 3px 8px"
-            >
-              Password
-            </button>
-            <button
-              id="logoutBtn"
-              class="btn ghost"
-              style="font-size: 0.75rem; padding: 3px 8px"
-            >
-              Logout
-            </button>
-          </div>
         </div>
-      </aside>
+      </header>
 
-      <main class="main-area">
-        <header class="topbar">
-          <div class="project-switch">
-            <select id="projectSelect" aria-label="Select project"></select>
-            <button id="openCreateBtn" class="btn primary">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              Project
-            </button>
-          </div>
+      <div id="globalError" class="banner hidden"></div>
 
-          <div class="topbar-actions">
-            <button id="refreshBtn" class="btn secondary">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M23 4v6h-6"></path>
-                <path d="M1 20v-6h6"></path>
-                <path
-                  d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
-                ></path>
-              </svg>
-              Refresh
-            </button>
-            <button id="runNowBtn" class="btn secondary" disabled>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>
-              Run Checks
-            </button>
-            <button id="toggleAutofixBtn" class="btn secondary" disabled>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="3"></circle>
-                <path
-                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                ></path>
-              </svg>
-              Autofix
-            </button>
-            <button id="deleteProjectBtn" class="btn danger" disabled>
-              Delete
-            </button>
-            <button id="openSettingsBtn" class="btn secondary">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="3"></circle>
-                <path
-                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                ></path>
-              </svg>
-              Settings
-            </button>
-          </div>
-        </header>
-
-        <div id="globalError" class="banner hidden"></div>
-
-        <div id="createPanel" class="modal-overlay hidden">
-          <div class="modal-container">
-            <div class="modal-header">
-              <div>
-                <p class="muted">New Project</p>
-                <h2>Add Project</h2>
-              </div>
-              <button
-                id="closeCreateBtn"
-                class="btn ghost modal-close-btn"
-                aria-label="Close create project"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div class="modal-body">
-              <form id="createProjectForm" class="form-grid">
-                <label
-                  >Name<input id="createName" required placeholder="my-project"
-                /></label>
-                <label
-                  >Domain<input
-                    id="createDomain"
-                    required
-                    placeholder="example.com"
-                /></label>
-                <label
-                  >Check Interval (sec)<input
-                    id="createInterval"
-                    type="number"
-                    min="5"
-                    value="30"
-                    required
-                /></label>
-                <label
-                  >Failure Threshold<input
-                    id="createThreshold"
-                    type="number"
-                    min="1"
-                    value="3"
-                    required
-                /></label>
-                <label class="checkbox-row">
-                  <input id="createAutofix" type="checkbox" checked /> Enable
-                  Autofix
-                </label>
-                <label
-                  >Alert Emails (comma-separated)<input
-                    id="createEmails"
-                    placeholder="team@example.com"
-                /></label>
-                <label class="full"
-                  >Routes (one per line)
-                  <textarea
-                    id="createPaths"
-                    rows="4"
-                    placeholder="/api
-/test"
-                  ></textarea>
-                </label>
-              </form>
-            </div>
-
-            <div class="modal-footer">
-              <button id="createDiscardBtn" class="btn ghost" type="button">
-                Cancel
-              </button>
-              <button id="createSubmitBtn" class="btn primary" type="button">
-                Create Project + Checks
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <section id="dashboardView" class="view active">
-          <div class="view-header">
+      <div id="createPanel" class="modal-overlay hidden">
+        <div class="modal-container">
+          <div class="modal-header">
             <div>
-              <p class="muted">Selected Project</p>
-              <h2 id="projectTitle">None</h2>
-              <p id="projectSubTitle" class="muted">
-                Create or select a project.
-              </p>
+              <p class="muted">New Project</p>
+              <h2>Add Project</h2>
             </div>
-            <span id="statusBadge" class="status-badge unknown">Unknown</span>
+            <button id="closeCreateBtn" class="btn ghost modal-close-btn" aria-label="Close create project">
+              &times;
+            </button>
           </div>
 
-          <div class="metric-grid">
-            <article class="metric-card">
-              <div class="metric-icon-wrap warn">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-                  ></path>
+          <div class="modal-body">
+            <form id="createProjectForm" class="form-grid">
+              <label>Name<input id="createName" required placeholder="my-project" /></label>
+              <label>Domain<input id="createDomain" required placeholder="example.com" /></label>
+              <label>Check Interval (sec)<input id="createInterval" type="number" min="5" value="30" required /></label>
+              <label>Failure Threshold<input id="createThreshold" type="number" min="1" value="3" required /></label>
+              <label class="checkbox-row">
+                <input id="createAutofix" type="checkbox" checked /> Enable
+                Autofix
+              </label>
+              <label>Alert Emails (comma-separated)<input id="createEmails" placeholder="team@example.com" /></label>
+              <label class="full">Routes (one per line)
+                <textarea id="createPaths" rows="4" placeholder="/api
+/test"></textarea>
+              </label>
+            </form>
+          </div>
+
+          <div class="modal-footer">
+            <button id="createDiscardBtn" class="btn ghost" type="button">
+              Cancel
+            </button>
+            <button id="createSubmitBtn" class="btn primary" type="button">
+              Create Project + Checks
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <section id="dashboardView" class="view active">
+        <div class="view-header">
+          <div>
+            <p class="muted">Selected Project</p>
+            <h2 id="projectTitle">None</h2>
+            <p id="projectSubTitle" class="muted">
+              Create or select a project.
+            </p>
+          </div>
+          <span id="statusBadge" class="status-badge unknown">Unknown</span>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card">
+            <div class="metric-icon-wrap warn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                </path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
+            <div>
+              <p class="metric-label">Active Incidents</p>
+              <p id="metricIncidents" class="metric-value">0</p>
+            </div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon-wrap info">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </div>
+            <div>
+              <p class="metric-label">Checks</p>
+              <p id="metricChecks" class="metric-value">0</p>
+            </div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon-wrap brand">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </div>
+            <div>
+              <p class="metric-label">Autofix</p>
+              <p id="metricAutofix" class="metric-value">Off</p>
+            </div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon-wrap muted-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div>
+              <p class="metric-label">Last Check</p>
+              <p id="metricLastCheck" class="metric-value small">-</p>
+            </div>
+          </article>
+        </div>
+
+        <!-- Restructured layout to make uptime more prominent -->
+        <div class="dash-grid-prominent">
+          <article id="uptimeWidget" class="panel-card uptime-widget" role="button" tabindex="0"
+            aria-label="View full uptime dashboard">
+            <div class="uptime-widget-header">
+              <div>
+                <h3 class="panel-card-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                  </svg>
+                  System Uptime Timeline
+                </h3>
+                <p class="muted">Click for details &rarr;</p>
+              </div>
+              <div class="uptime-widget-pct-wrap">
+                <span id="widgetUptimePct" class="uptime-widget-pct">-</span>
+              </div>
+            </div>
+            <div id="widgetTimeline" class="timeline"></div>
+          </article>
+
+          <div class="dash-grid-secondary">
+            <article class="panel-card">
+              <h3 class="panel-card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 11 12 14 22 4"></polyline>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                Checks Overview
+              </h3>
+              <div id="checksList" class="list"></div>
+            </article>
+
+            <article class="panel-card">
+              <h3 class="panel-card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                  </path>
                   <line x1="12" y1="9" x2="12" y2="13"></line>
                   <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
-              </div>
-              <div>
-                <p class="metric-label">Active Incidents</p>
-                <p id="metricIncidents" class="metric-value">0</p>
-              </div>
+                Recent Incidents
+              </h3>
+              <div id="incidentsList" class="list"></div>
             </article>
-            <article class="metric-card">
-              <div class="metric-icon-wrap info">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
+          </div>
+        </div>
+
+        <div class="panel-grid panel-grid-two">
+          <article class="panel-card">
+            <h3 class="panel-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="12" x2="2" y2="12"></line>
+                <path
+                  d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z">
+                </path>
+                <line x1="6" y1="16" x2="6.01" y2="16"></line>
+                <line x1="10" y1="16" x2="10.01" y2="16"></line>
+              </svg>
+              Per Route Health
+            </h3>
+            <div id="pathsHealthList" class="list"></div>
+          </article>
+
+          <article class="panel-card">
+            <h3 class="panel-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line>
+                <line x1="9" y1="8" x2="15" y2="8"></line>
+                <line x1="17" y1="16" x2="23" y2="16"></line>
+              </svg>
+              Per Route Logs
+            </h3>
+            <p id="pathLogsTitle" class="muted">
+              Select a route to view health logs.
+            </p>
+            <div id="pathLogsList" class="list mono"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="fixesView" class="view">
+        <div class="view-header">
+          <div>
+            <p class="muted">Autofix Configuration</p>
+            <h2>Fixes Management</h2>
+          </div>
+          <div class="inline-metrics">
+            <span class="inline-metric"><strong id="metricFixes">0</strong> scripts</span>
+            <span class="inline-metric-sep">|</span>
+            <span class="inline-metric">autofix <strong id="metricFixAutofix">Off</strong></span>
+          </div>
+        </div>
+
+        <nav class="sub-tabs" id="fixesSubTabs">
+          <button class="sub-tab active" data-subtab="fixScriptsPane">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+              </path>
+            </svg>
+            Scripts
+          </button>
+          <button class="sub-tab" data-subtab="fixRunsPane">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+            Runs
+            <span id="fixRunsCount" class="sub-tab-badge hidden">0</span>
+          </button>
+          <button class="sub-tab" data-subtab="fixEnvPane">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Environment
+          </button>
+        </nav>
+
+        <div id="fixScriptsPane" class="sub-tab-pane active">
+          <div class="fixes-grid">
+            <div class="fixes-forms">
+              <div class="fix-form-block">
+                <h4>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  Add Fix Script
+                </h4>
+                <form id="fixUploadForm" class="form-grid compact" enctype="multipart/form-data">
+                  <label>Name<input id="uploadFixName" placeholder="Upload Fix Script" required /></label>
+                  <label>Type
+                    <select id="uploadFixType">
+                      <option value="http">http</option>
+                      <option value="tcp">tcp</option>
+                      <option value="ping">ping</option>
+                      <option value="any">any</option>
+                    </select>
+                  </label>
+                  <label>Timeout (sec)<input id="uploadFixTimeout" type="number" min="1" value="60" required /></label>
+                  <label>Script File (.sh/.bat/.cmd)<input id="uploadFixFile" type="file" accept=".sh,.bat,.cmd"
+                      required /></label>
+                  <label class="full">Error Pattern Template
+                    <select id="uploadFixTemplate">
+                      <option value="">Custom</option>
+                    </select>
+                  </label>
+                  <label class="full">Error Pattern (regex)<input id="uploadFixPattern"
+                      placeholder="timeout|connection refused" required /></label>
+                  <button class="btn primary" type="submit">
+                    Upload + Attach
+                  </button>
+                </form>
               </div>
-              <div>
-                <p class="metric-label">Checks</p>
-                <p id="metricChecks" class="metric-value">0</p>
+            </div>
+
+            <div class="fixes-list-panel">
+              <h4>Attached Fixes</h4>
+              <div id="fixesList" class="list"></div>
+            </div>
+          </div>
+        </div>
+        <!-- end fixScriptsPane -->
+
+        <div id="fixRunsPane" class="sub-tab-pane">
+          <article class="panel-card fix-runs-panel">
+            <h3 class="panel-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5"></polyline>
+                <line x1="12" y1="19" x2="20" y2="19"></line>
+              </svg>
+              Fix Runs
+              <span class="muted" style="font-weight: 400; font-size: 0.82rem">(past 3 days)</span>
+            </h3>
+            <div id="fixRunsList" class="fix-runs-list"></div>
+          </article>
+        </div>
+        <!-- end fixRunsPane -->
+
+        <div id="fixEnvPane" class="sub-tab-pane">
+          <div class="fixes-grid">
+            <div class="fixes-forms">
+              <div class="fix-form-block">
+                <h4>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  Add Environment Variable
+                </h4>
+                <form id="envVarForm" class="form-grid compact">
+                  <label class="full">Name<input id="envVarName" placeholder="API_KEY" required
+                      autocomplete="off" /></label>
+                  <label class="full">Value<textarea id="envVarValue" placeholder="value" required autocomplete="off"
+                      rows="3"></textarea></label>
+                  <label class="checkbox-row">
+                    <input id="envVarIsSecret" type="checkbox" checked />
+                    Secret
+                  </label>
+                  <button class="btn primary" type="submit">
+                    Save Variable
+                  </button>
+                </form>
+                <p class="muted" style="margin-top: 0.5rem; font-size: 0.78rem">
+                  Environment variables are injected into fix scripts at
+                  runtime. Secret values are encrypted at rest and cannot be
+                  viewed after saving. Editing a variable replaces the old
+                  value entirely.
+                </p>
               </div>
-            </article>
+            </div>
+
+            <div class="fixes-list-panel">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.25rem;">
+                <h4>Project Environment</h4>
+                <button id="resetDefaultEnvBtn" class="btn ghost" type="button"
+                  style="font-size:0.78rem; padding:0.3rem 0.6rem; gap:0.3rem;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                  Reset Defaults
+                </button>
+              </div>
+              <div id="envVarsList" class="list"></div>
+            </div>
+          </div>
+        </div>
+        <!-- end fixEnvPane -->
+      </section>
+
+      <div id="fixRunDetailModal" class="modal-overlay hidden">
+        <div class="modal-container modal-large">
+          <div class="modal-header">
+            <div>
+              <p class="muted">Fix Execution</p>
+              <h2>Run Details</h2>
+            </div>
+            <button id="closeFixRunDetailX" class="btn ghost modal-close-btn" aria-label="Close run detail">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body" id="fixRunDetailBody"></div>
+        </div>
+      </div>
+
+      <div id="settingsModal" class="modal-overlay hidden">
+        <div class="modal-container modal-large">
+          <div class="modal-header">
+            <div>
+              <p class="muted">Project Configuration</p>
+              <h2>Settings</h2>
+            </div>
+            <button id="closeSettingsX" class="btn ghost modal-close-btn" aria-label="Close settings">
+              &times;
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <form id="settingsForm" class="form-grid">
+              <label>Name<input id="settingsName" required placeholder="my-project" /></label>
+              <label>Domain<input id="settingsDomain" required placeholder="example.com" /></label>
+              <label>Check Interval (sec)<input id="settingsInterval" type="number" min="5" required /></label>
+              <label>Failure Threshold<input id="settingsThreshold" type="number" min="1" required /></label>
+              <label class="checkbox-row">
+                <input id="settingsAutofix" type="checkbox" /> Enable Autofix
+              </label>
+              <label>Max Autofix Retries
+                <input id="settingsMaxRetries" type="number" min="0" value="3" placeholder="0 = unlimited" />
+              </label>
+              <div class="full settings-checks-head">
+                <h3 class="panel-card-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="12" x2="2" y2="12"></line>
+                    <path
+                      d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z">
+                    </path>
+                  </svg>
+                  Routes / Checks
+                </h3>
+                <button type="button" id="addSettingsCheckBtn" class="btn secondary">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  Add Route
+                </button>
+              </div>
+              <div id="settingsChecksRows" class="full settings-checks-rows"></div>
+              <div class="full settings-checks-head">
+                <h3 class="panel-card-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  Email Alerts
+                </h3>
+              </div>
+              <label class="full">Alert Emails (comma-separated)<input id="settingsEmails"
+                  placeholder="team@example.com,ops@example.com" /></label>
+              <label class="full">SMTP Profile
+                <select id="settingsSMTP"></select>
+              </label>
+              <label class="full">
+                <span class="muted">If no profile is selected, alerts use env default
+                  SMTP.</span>
+              </label>
+              <div class="full">
+                <h3 class="panel-card-title">Saved SMTP Profiles</h3>
+                <div id="smtpProfilesList" class="list compact-list"></div>
+              </div>
+              <div class="full settings-checks-head">
+                <h3 class="panel-card-title">Create SMTP Profile</h3>
+              </div>
+              <label>SMTP Host<input id="smtpHost" placeholder="smtp.gmail.com" /></label>
+              <label>SMTP Port<input id="smtpPort" type="number" min="1" value="587" /></label>
+              <label>SMTP User<input id="smtpUser" placeholder="alerts@domain.com" /></label>
+              <label>SMTP Password<input id="smtpPass" type="password" /></label>
+              <label class="full">From Email<input id="smtpFrom" placeholder="alerts@domain.com" /></label>
+              <button id="createSMTPBtn" class="btn secondary full" type="button">
+                Create SMTP Profile
+              </button>
+              <div class="full settings-checks-head mt-3">
+                <h3 class="panel-card-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Email Templates
+                </h3>
+              </div>
+              <p class="full muted template-hints">
+                Placeholders: <code>{project_name}</code>,
+                <code>{domain}</code>, <code>{event}</code>,
+                <code>{incident_id}</code>, <code>{timestamp}</code>,
+                <code>{error}</code>, <code>{autofix_status}</code>,
+                <code>{check_id}</code>, <code>{check_type}</code>,
+                <code>{check_target}</code>, <code>{autofix_attempts}</code>,
+                <code>{max_retries}</code>.
+              </p>
+              <label class="full">Opened Subject<input id="tplOpenedSubject" /></label>
+              <label class="full">Opened Body<textarea id="tplOpenedBody" rows="3"></textarea>
+              </label>
+              <label class="full">Resolved Subject<input id="tplResolvedSubject" /></label>
+              <label class="full">Resolved Body<textarea id="tplResolvedBody" rows="3"></textarea>
+              </label>
+              <label class="full">Repeated Subject<input id="tplRepeatedSubject" /></label>
+              <label class="full">Repeated Body<textarea id="tplRepeatedBody" rows="3"></textarea>
+              </label>
+              <label class="full">Autofix Limit Subject<input id="tplAutofixSubject" /></label>
+              <label class="full">Autofix Limit Body<textarea id="tplAutofixBody" rows="3"></textarea>
+              </label>
+            </form>
+          </div>
+
+          <div class="modal-footer">
+            <button id="settingsDiscardBtn" class="btn ghost" type="button">
+              Discard
+            </button>
+            <button id="settingsSaveBtn" class="btn primary" type="button">
+              Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <section id="uptimeView" class="view">
+        <div class="view-header">
+          <div>
+            <p class="muted">Uptime Overview</p>
+            <h2>Health Timeline</h2>
+          </div>
+          <div class="range-buttons" id="rangeButtons">
+            <button class="btn secondary range-btn active" data-range="1h">
+              1h
+            </button>
+            <button class="btn secondary range-btn" data-range="12h">
+              12h
+            </button>
+            <button class="btn secondary range-btn" data-range="1d">
+              1d
+            </button>
+            <button class="btn secondary range-btn" data-range="7d">
+              7d
+            </button>
+            <button class="btn secondary range-btn" data-range="30d">
+              30d
+            </button>
+          </div>
+        </div>
+
+        <nav class="sub-tabs" id="uptimeSubTabs">
+          <button class="sub-tab active" data-subtab="uptimeTimelinePane">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Timeline
+          </button>
+          <button class="sub-tab" data-subtab="uptimeLogsPane">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+            Logs & Events
+          </button>
+        </nav>
+
+        <!-- Timeline Sub-Tab -->
+        <div id="uptimeTimelinePane" class="sub-tab-pane active">
+          <div class="metric-grid">
             <article class="metric-card">
               <div class="metric-icon-wrap brand">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polygon
-                    points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
-                  ></polygon>
-                </svg>
-              </div>
-              <div>
-                <p class="metric-label">Autofix</p>
-                <p id="metricAutofix" class="metric-value">Off</p>
-              </div>
-            </article>
-            <article class="metric-card">
-              <div class="metric-icon-wrap muted-icon">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
               </div>
               <div>
-                <p class="metric-label">Last Check</p>
-                <p id="metricLastCheck" class="metric-value small">-</p>
+                <p class="metric-label">Window Uptime</p>
+                <p id="uptimeRecent" class="metric-value">0%</p>
+              </div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-icon-wrap info">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                  <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                </svg>
+              </div>
+              <div>
+                <p class="metric-label">Data Coverage</p>
+                <p id="uptimeTotal" class="metric-value">0%</p>
+              </div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-icon-wrap ok">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <div>
+                <p class="metric-label">Up Time (sec)</p>
+                <p id="healthyRuns" class="metric-value">0</p>
+              </div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-icon-wrap error">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                </svg>
+              </div>
+              <div>
+                <p class="metric-label">Down Time (sec)</p>
+                <p id="failedRuns" class="metric-value">0</p>
               </div>
             </article>
           </div>
 
-          <!-- Restructured layout to make uptime more prominent -->
-          <div class="dash-grid-prominent">
-            <article
-              id="uptimeWidget"
-              class="panel-card uptime-widget"
-              role="button"
-              tabindex="0"
-              aria-label="View full uptime dashboard"
-            >
-              <div class="uptime-widget-header">
-                <div>
-                  <h3 class="panel-card-title">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <polyline
-                        points="22 12 18 12 15 21 9 3 6 12 2 12"
-                      ></polyline>
-                    </svg>
-                    System Uptime Timeline
-                  </h3>
-                  <p class="muted">Click for details &rarr;</p>
-                </div>
-                <div class="uptime-widget-pct-wrap">
-                  <span id="widgetUptimePct" class="uptime-widget-pct">-</span>
-                </div>
-              </div>
-              <div id="widgetTimeline" class="timeline"></div>
-            </article>
-
-            <div class="dash-grid-secondary">
-              <article class="panel-card">
-                <h3 class="panel-card-title">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <polyline points="9 11 12 14 22 4"></polyline>
-                    <path
-                      d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
-                    ></path>
-                  </svg>
-                  Checks Overview
-                </h3>
-                <div id="checksList" class="list"></div>
-              </article>
-
-              <article class="panel-card">
-                <h3 class="panel-card-title">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path
-                      d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-                    ></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                  </svg>
-                  Recent Incidents
-                </h3>
-                <div id="incidentsList" class="list"></div>
-              </article>
+          <article class="panel-card uptime-focused">
+            <div class="panel-card-header-flex">
+              <h3 class="panel-card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                Status Timeline
+              </h3>
             </div>
-          </div>
+            <div id="uptimeCanvasWrap" class="uptime-canvas-wrap">
+              <div class="uptime-scroll-nav">
+                <button id="uptimeScrollLeft" class="uptime-nav-btn" aria-label="Scroll left" disabled>&#x2039;</button>
+                <button id="uptimeScrollRight" class="uptime-nav-btn" aria-label="Scroll right"
+                  disabled>&#x203A;</button>
+              </div>
+              <canvas id="uptimeCanvas" class="uptime-canvas" width="1200" height="280"></canvas>
+              <div id="uptimeTooltip" class="uptime-tooltip hidden"></div>
+            </div>
+          </article>
+        </div>
 
+        <!-- Logs & Events Sub-Tab -->
+        <div id="uptimeLogsPane" class="sub-tab-pane">
           <div class="panel-grid panel-grid-two">
             <article class="panel-card">
               <h3 class="panel-card-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="22" y1="12" x2="2" y2="12"></line>
-                  <path
-                    d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
-                  ></path>
-                  <line x1="6" y1="16" x2="6.01" y2="16"></line>
-                  <line x1="10" y1="16" x2="10.01" y2="16"></line>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                 </svg>
-                Per Route Health
+                Recent Check Runs
               </h3>
-              <div id="pathsHealthList" class="list"></div>
+              <div id="runsList" class="list mono"></div>
             </article>
 
             <article class="panel-card">
               <h3 class="panel-card-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="4" y1="21" x2="4" y2="14"></line>
-                  <line x1="4" y1="10" x2="4" y2="3"></line>
-                  <line x1="12" y1="21" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12" y2="3"></line>
-                  <line x1="20" y1="21" x2="20" y2="16"></line>
-                  <line x1="20" y1="12" x2="20" y2="3"></line>
-                  <line x1="1" y1="14" x2="7" y2="14"></line>
-                  <line x1="9" y1="8" x2="15" y2="8"></line>
-                  <line x1="17" y1="16" x2="23" y2="16"></line>
-                </svg>
-                Per Route Logs
-              </h3>
-              <p id="pathLogsTitle" class="muted">
-                Select a route to view health logs.
-              </p>
-              <div id="pathLogsList" class="list mono"></div>
-            </article>
-          </div>
-        </section>
-
-        <section id="fixesView" class="view">
-          <div class="view-header">
-            <div>
-              <p class="muted">Autofix Configuration</p>
-              <h2>Fixes Management</h2>
-            </div>
-            <div class="inline-metrics">
-              <span class="inline-metric"
-                ><strong id="metricFixes">0</strong> scripts</span
-              >
-              <span class="inline-metric-sep">|</span>
-              <span class="inline-metric"
-                >autofix <strong id="metricFixAutofix">Off</strong></span
-              >
-            </div>
-          </div>
-
-          <nav class="sub-tabs" id="fixesSubTabs">
-            <button class="sub-tab active" data-subtab="fixScriptsPane">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
-                ></path>
-              </svg>
-              Scripts
-            </button>
-            <button class="sub-tab" data-subtab="fixRunsPane">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polyline points="4 17 10 11 4 5"></polyline>
-                <line x1="12" y1="19" x2="20" y2="19"></line>
-              </svg>
-              Runs
-              <span id="fixRunsCount" class="sub-tab-badge hidden">0</span>
-            </button>
-            <button class="sub-tab" data-subtab="fixEnvPane">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-              Environment
-            </button>
-          </nav>
-
-          <div id="fixScriptsPane" class="sub-tab-pane active">
-            <div class="fixes-grid">
-              <div class="fixes-forms">
-                <div class="fix-form-block">
-                  <h4>
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path
-                        d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                      ></path>
-                      <polyline points="17 8 12 3 7 8"></polyline>
-                      <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    Add Fix Script
-                  </h4>
-                  <form
-                    id="fixUploadForm"
-                    class="form-grid compact"
-                    enctype="multipart/form-data"
-                  >
-                    <label
-                      >Name<input
-                        id="uploadFixName"
-                        placeholder="Upload Fix Script"
-                        required
-                    /></label>
-                    <label
-                      >Type
-                      <select id="uploadFixType">
-                        <option value="http">http</option>
-                        <option value="tcp">tcp</option>
-                        <option value="ping">ping</option>
-                        <option value="any">any</option>
-                      </select>
-                    </label>
-                    <label
-                      >Timeout (sec)<input
-                        id="uploadFixTimeout"
-                        type="number"
-                        min="1"
-                        value="60"
-                        required
-                    /></label>
-                    <label
-                      >Script File (.sh/.bat/.cmd)<input
-                        id="uploadFixFile"
-                        type="file"
-                        accept=".sh,.bat,.cmd"
-                        required
-                    /></label>
-                    <label class="full"
-                      >Error Pattern Template
-                      <select id="uploadFixTemplate">
-                        <option value="">Custom</option>
-                      </select>
-                    </label>
-                    <label class="full"
-                      >Error Pattern (regex)<input
-                        id="uploadFixPattern"
-                        placeholder="timeout|connection refused"
-                        required
-                    /></label>
-                    <button class="btn primary" type="submit">
-                      Upload + Attach
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              <div class="fixes-list-panel">
-                <h4>Attached Fixes</h4>
-                <div id="fixesList" class="list"></div>
-              </div>
-            </div>
-          </div>
-          <!-- end fixScriptsPane -->
-
-          <div id="fixRunsPane" class="sub-tab-pane">
-            <article class="panel-card fix-runs-panel">
-              <h3 class="panel-card-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="4 17 10 11 4 5"></polyline>
                   <line x1="12" y1="19" x2="20" y2="19"></line>
                 </svg>
-                Fix Runs
-                <span class="muted" style="font-weight: 400; font-size: 0.82rem"
-                  >(past 3 days)</span
-                >
+                Live Logs
               </h3>
-              <div id="fixRunsList" class="fix-runs-list"></div>
+              <div id="logsList" class="list mono"></div>
             </article>
           </div>
-          <!-- end fixRunsPane -->
 
-          <div id="fixEnvPane" class="sub-tab-pane">
-            <div class="fixes-grid">
-              <div class="fixes-forms">
-                <div class="fix-form-block">
-                  <h4>
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <rect
-                        x="3"
-                        y="11"
-                        width="18"
-                        height="11"
-                        rx="2"
-                        ry="2"
-                      ></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    Add Environment Variable
-                  </h4>
-                  <form id="envVarForm" class="form-grid compact">
-                    <label class="full"
-                      >Name<input
-                        id="envVarName"
-                        placeholder="API_KEY"
-                        required
-                        autocomplete="off"
-                    /></label>
-                    <label class="full"
-                      >Value<textarea
-                        id="envVarValue"
-                        placeholder="value"
-                        required
-                        autocomplete="off"
-                        rows="3"
-                    ></textarea></label>
-                    <label class="checkbox-row">
-                      <input id="envVarIsSecret" type="checkbox" checked />
-                      Secret
-                    </label>
-                    <button class="btn primary" type="submit">
-                      Save Variable
-                    </button>
-                  </form>
-                  <p
-                    class="muted"
-                    style="margin-top: 0.5rem; font-size: 0.78rem"
-                  >
-                    Environment variables are injected into fix scripts at
-                    runtime. Secret values are encrypted at rest and cannot be
-                    viewed after saving. Editing a variable replaces the old
-                    value entirely.
-                  </p>
-                </div>
-              </div>
-
-              <div class="fixes-list-panel">
-                <h4>Project Environment</h4>
-                <div id="envVarsList" class="list"></div>
-              </div>
-            </div>
-          </div>
-          <!-- end fixEnvPane -->
-        </section>
-
-        <div id="fixRunDetailModal" class="modal-overlay hidden">
-          <div class="modal-container modal-large">
-            <div class="modal-header">
-              <div>
-                <p class="muted">Fix Execution</p>
-                <h2>Run Details</h2>
-              </div>
-              <button
-                id="closeFixRunDetailX"
-                class="btn ghost modal-close-btn"
-                aria-label="Close run detail"
-              >
-                &times;
-              </button>
-            </div>
-            <div class="modal-body" id="fixRunDetailBody"></div>
-          </div>
+          <article class="panel-card compact-mt">
+            <h3 class="panel-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              Quick Fixes
+            </h3>
+            <p class="muted">Run an attached fix script directly.</p>
+            <div id="uptimeFixesList" class="list"></div>
+          </article>
         </div>
+      </section>
 
-        <div id="settingsModal" class="modal-overlay hidden">
-          <div class="modal-container modal-large">
-            <div class="modal-header">
-              <div>
-                <p class="muted">Project Configuration</p>
-                <h2>Settings</h2>
-              </div>
-              <button
-                id="closeSettingsX"
-                class="btn ghost modal-close-btn"
-                aria-label="Close settings"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div class="modal-body">
-              <form id="settingsForm" class="form-grid">
-                <label
-                  >Name<input
-                    id="settingsName"
-                    required
-                    placeholder="my-project"
-                /></label>
-                <label
-                  >Domain<input
-                    id="settingsDomain"
-                    required
-                    placeholder="example.com"
-                /></label>
-                <label
-                  >Check Interval (sec)<input
-                    id="settingsInterval"
-                    type="number"
-                    min="5"
-                    required
-                /></label>
-                <label
-                  >Failure Threshold<input
-                    id="settingsThreshold"
-                    type="number"
-                    min="1"
-                    required
-                /></label>
-                <label class="checkbox-row">
-                  <input id="settingsAutofix" type="checkbox" /> Enable Autofix
-                </label>
-                <label
-                  >Max Autofix Retries
-                  <input
-                    id="settingsMaxRetries"
-                    type="number"
-                    min="0"
-                    value="3"
-                    placeholder="0 = unlimited"
-                  />
-                </label>
-                <div class="full settings-checks-head">
-                  <h3 class="panel-card-title">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <line x1="22" y1="12" x2="2" y2="12"></line>
-                      <path
-                        d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
-                      ></path>
-                    </svg>
-                    Routes / Checks
-                  </h3>
-                  <button
-                    type="button"
-                    id="addSettingsCheckBtn"
-                    class="btn secondary"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Add Route
-                  </button>
-                </div>
-                <div
-                  id="settingsChecksRows"
-                  class="full settings-checks-rows"
-                ></div>
-                <div class="full settings-checks-head">
-                  <h3 class="panel-card-title">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path
-                        d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-                      ></path>
-                      <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
-                    Email Alerts
-                  </h3>
-                </div>
-                <label class="full"
-                  >Alert Emails (comma-separated)<input
-                    id="settingsEmails"
-                    placeholder="team@example.com,ops@example.com"
-                /></label>
-                <label class="full"
-                  >SMTP Profile
-                  <select id="settingsSMTP"></select>
-                </label>
-                <label class="full">
-                  <span class="muted"
-                    >If no profile is selected, alerts use env default
-                    SMTP.</span
-                  >
-                </label>
-                <div class="full">
-                  <h3 class="panel-card-title">Saved SMTP Profiles</h3>
-                  <div id="smtpProfilesList" class="list compact-list"></div>
-                </div>
-                <div class="full settings-checks-head">
-                  <h3 class="panel-card-title">Create SMTP Profile</h3>
-                </div>
-                <label
-                  >SMTP Host<input id="smtpHost" placeholder="smtp.gmail.com"
-                /></label>
-                <label
-                  >SMTP Port<input
-                    id="smtpPort"
-                    type="number"
-                    min="1"
-                    value="587"
-                /></label>
-                <label
-                  >SMTP User<input
-                    id="smtpUser"
-                    placeholder="alerts@domain.com"
-                /></label>
-                <label
-                  >SMTP Password<input id="smtpPass" type="password"
-                /></label>
-                <label class="full"
-                  >From Email<input
-                    id="smtpFrom"
-                    placeholder="alerts@domain.com"
-                /></label>
-                <button
-                  id="createSMTPBtn"
-                  class="btn secondary full"
-                  type="button"
-                >
-                  Create SMTP Profile
-                </button>
-                <div class="full settings-checks-head mt-3">
-                  <h3 class="panel-card-title">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path
-                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                      ></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    Email Templates
-                  </h3>
-                </div>
-                <p class="full muted template-hints">
-                  Placeholders: <code>{project_name}</code>,
-                  <code>{domain}</code>, <code>{event}</code>,
-                  <code>{incident_id}</code>, <code>{timestamp}</code>,
-                  <code>{error}</code>, <code>{autofix_status}</code>,
-                  <code>{check_id}</code>, <code>{check_type}</code>,
-                  <code>{check_target}</code>, <code>{autofix_attempts}</code>,
-                  <code>{max_retries}</code>.
-                </p>
-                <label class="full"
-                  >Opened Subject<input id="tplOpenedSubject"
-                /></label>
-                <label class="full"
-                  >Opened Body<textarea id="tplOpenedBody" rows="3"></textarea>
-                </label>
-                <label class="full"
-                  >Resolved Subject<input id="tplResolvedSubject"
-                /></label>
-                <label class="full"
-                  >Resolved Body<textarea
-                    id="tplResolvedBody"
-                    rows="3"
-                  ></textarea>
-                </label>
-                <label class="full"
-                  >Repeated Subject<input id="tplRepeatedSubject"
-                /></label>
-                <label class="full"
-                  >Repeated Body<textarea
-                    id="tplRepeatedBody"
-                    rows="3"
-                  ></textarea>
-                </label>
-                <label class="full"
-                  >Autofix Limit Subject<input id="tplAutofixSubject"
-                /></label>
-                <label class="full"
-                  >Autofix Limit Body<textarea
-                    id="tplAutofixBody"
-                    rows="3"
-                  ></textarea>
-                </label>
-              </form>
-            </div>
-
-            <div class="modal-footer">
-              <button id="settingsDiscardBtn" class="btn ghost" type="button">
-                Discard
-              </button>
-              <button id="settingsSaveBtn" class="btn primary" type="button">
-                Save Settings
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <section id="uptimeView" class="view">
-          <div class="view-header">
+      <div id="editFixModal" class="modal-overlay hidden">
+        <div class="modal-container modal-sm">
+          <div class="modal-header">
             <div>
-              <p class="muted">Uptime Overview</p>
-              <h2>Health Timeline</h2>
+              <p class="muted">Edit Fix Script</p>
+              <h2>Edit Fix</h2>
             </div>
-            <div class="range-buttons" id="rangeButtons">
-              <button class="btn secondary range-btn active" data-range="1h">
-                1h
-              </button>
-              <button class="btn secondary range-btn" data-range="12h">
-                12h
-              </button>
-              <button class="btn secondary range-btn" data-range="1d">
-                1d
-              </button>
-              <button class="btn secondary range-btn" data-range="7d">
-                7d
-              </button>
-              <button class="btn secondary range-btn" data-range="30d">
-                30d
-              </button>
-            </div>
-          </div>
-
-          <nav class="sub-tabs" id="uptimeSubTabs">
-            <button class="sub-tab active" data-subtab="uptimeTimelinePane">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-              </svg>
-              Timeline
+            <button id="closeEditFixX" class="btn ghost modal-close-btn" aria-label="Close edit fix">
+              &times;
             </button>
-            <button class="sub-tab" data-subtab="uptimeLogsPane">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polyline points="4 17 10 11 4 5"></polyline>
-                <line x1="12" y1="19" x2="20" y2="19"></line>
-              </svg>
-              Logs & Events
+          </div>
+
+          <div class="modal-body">
+            <form id="editFixForm" class="form-grid compact">
+              <input id="editFixId" type="hidden" />
+              <label class="full">Name<input id="editFixName" required placeholder="Fix name" /></label>
+              <label>Type
+                <select id="editFixType">
+                  <option value="http">http</option>
+                  <option value="tcp">tcp</option>
+                  <option value="ping">ping</option>
+                  <option value="any">any</option>
+                </select>
+              </label>
+              <label>Timeout (sec)<input id="editFixTimeout" type="number" min="1" value="60" required /></label>
+              <label class="full">Script Path<input id="editFixScriptPath" required
+                  placeholder="restart-service.sh or restart-service.bat" /></label>
+              <label class="full">Error Pattern Template
+                <select id="editFixTemplate">
+                  <option value="">Custom</option>
+                </select>
+              </label>
+              <label class="full">Error Pattern (regex)<input id="editFixPattern"
+                  placeholder="connection refused|status code 5[0-9]{2}" required /></label>
+            </form>
+          </div>
+
+          <div class="modal-footer">
+            <button id="editFixDiscardBtn" class="btn ghost" type="button">
+              Cancel
             </button>
-          </nav>
-
-          <!-- Timeline Sub-Tab -->
-          <div id="uptimeTimelinePane" class="sub-tab-pane active">
-            <div class="metric-grid">
-              <article class="metric-card">
-                <div class="metric-icon-wrap brand">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                </div>
-                <div>
-                  <p class="metric-label">Window Uptime</p>
-                  <p id="uptimeRecent" class="metric-value">0%</p>
-                </div>
-              </article>
-              <article class="metric-card">
-                <div class="metric-icon-wrap info">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <p class="metric-label">Data Coverage</p>
-                  <p id="uptimeTotal" class="metric-value">0%</p>
-                </div>
-              </article>
-              <article class="metric-card">
-                <div class="metric-icon-wrap ok">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                </div>
-                <div>
-                  <p class="metric-label">Up Time (sec)</p>
-                  <p id="healthyRuns" class="metric-value">0</p>
-                </div>
-              </article>
-              <article class="metric-card">
-                <div class="metric-icon-wrap error">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <rect
-                      x="3"
-                      y="3"
-                      width="18"
-                      height="18"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                  </svg>
-                </div>
-                <div>
-                  <p class="metric-label">Down Time (sec)</p>
-                  <p id="failedRuns" class="metric-value">0</p>
-                </div>
-              </article>
-            </div>
-
-            <article class="panel-card uptime-focused">
-              <div class="panel-card-header-flex">
-                <h3 class="panel-card-title">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <rect
-                      x="2"
-                      y="3"
-                      width="20"
-                      height="14"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                  </svg>
-                  Status Timeline
-                </h3>
-              </div>
-              <div id="uptimeCanvasWrap" class="uptime-canvas-wrap">
-                <div class="uptime-scroll-nav">
-                  <button id="uptimeScrollLeft" class="uptime-nav-btn" aria-label="Scroll left" disabled>&#x2039;</button>
-                  <button id="uptimeScrollRight" class="uptime-nav-btn" aria-label="Scroll right" disabled>&#x203A;</button>
-                </div>
-                <canvas
-                  id="uptimeCanvas"
-                  class="uptime-canvas"
-                  width="1200"
-                  height="280"
-                ></canvas>
-                <div id="uptimeTooltip" class="uptime-tooltip hidden"></div>
-              </div>
-            </article>
-          </div>
-
-          <!-- Logs & Events Sub-Tab -->
-          <div id="uptimeLogsPane" class="sub-tab-pane">
-            <div class="panel-grid panel-grid-two">
-              <article class="panel-card">
-                <h3 class="panel-card-title">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <polyline
-                      points="22 12 18 12 15 21 9 3 6 12 2 12"
-                    ></polyline>
-                  </svg>
-                  Recent Check Runs
-                </h3>
-                <div id="runsList" class="list mono"></div>
-              </article>
-
-              <article class="panel-card">
-                <h3 class="panel-card-title">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <polyline points="4 17 10 11 4 5"></polyline>
-                    <line x1="12" y1="19" x2="20" y2="19"></line>
-                  </svg>
-                  Live Logs
-                </h3>
-                <div id="logsList" class="list mono"></div>
-              </article>
-            </div>
-
-            <article class="panel-card compact-mt">
-              <h3 class="panel-card-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polygon
-                    points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
-                  ></polygon>
-                </svg>
-                Quick Fixes
-              </h3>
-              <p class="muted">Run an attached fix script directly.</p>
-              <div id="uptimeFixesList" class="list"></div>
-            </article>
-          </div>
-        </section>
-
-        <div id="editFixModal" class="modal-overlay hidden">
-          <div class="modal-container modal-sm">
-            <div class="modal-header">
-              <div>
-                <p class="muted">Edit Fix Script</p>
-                <h2>Edit Fix</h2>
-              </div>
-              <button
-                id="closeEditFixX"
-                class="btn ghost modal-close-btn"
-                aria-label="Close edit fix"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div class="modal-body">
-              <form id="editFixForm" class="form-grid compact">
-                <input id="editFixId" type="hidden" />
-                <label class="full"
-                  >Name<input id="editFixName" required placeholder="Fix name"
-                /></label>
-                <label
-                  >Type
-                  <select id="editFixType">
-                    <option value="http">http</option>
-                    <option value="tcp">tcp</option>
-                    <option value="ping">ping</option>
-                    <option value="any">any</option>
-                  </select>
-                </label>
-                <label
-                  >Timeout (sec)<input
-                    id="editFixTimeout"
-                    type="number"
-                    min="1"
-                    value="60"
-                    required
-                /></label>
-                <label class="full"
-                  >Script Path<input
-                    id="editFixScriptPath"
-                    required
-                    placeholder="restart-service.sh or restart-service.bat"
-                /></label>
-                <label class="full"
-                  >Error Pattern Template
-                  <select id="editFixTemplate">
-                    <option value="">Custom</option>
-                  </select>
-                </label>
-                <label class="full"
-                  >Error Pattern (regex)<input
-                    id="editFixPattern"
-                    placeholder="connection refused|status code 5[0-9]{2}"
-                    required
-                /></label>
-              </form>
-            </div>
-
-            <div class="modal-footer">
-              <button id="editFixDiscardBtn" class="btn ghost" type="button">
-                Cancel
-              </button>
-              <button id="editFixSaveBtn" class="btn primary" type="button">
-                Save Fix
-              </button>
-            </div>
+            <button id="editFixSaveBtn" class="btn primary" type="button">
+              Save Fix
+            </button>
           </div>
         </div>
-        <!-- Admin View -->
-        <div id="adminView" class="view">
-          <div class="section-card">
-            <div class="section-header">
-              <h3>User Management</h3>
-              <button id="openCreateUserBtn" class="btn primary">
-                + Create User
-              </button>
-            </div>
-            <div id="adminUsersList" class="list-scroll"></div>
+      </div>
+      <!-- Admin View -->
+      <div id="adminView" class="view">
+        <div class="section-card">
+          <div class="section-header">
+            <h3>User Management</h3>
+            <button id="openCreateUserBtn" class="btn primary">
+              + Create User
+            </button>
           </div>
+          <div id="adminUsersList" class="list-scroll"></div>
         </div>
+      </div>
 
-        <!-- Create User Modal -->
-        <div id="createUserModal" class="modal-overlay hidden">
-          <div class="modal-container modal-sm">
-            <div class="modal-header">
-              <div>
-                <p class="muted">Admin</p>
-                <h2>Create User</h2>
-              </div>
-              <button
-                class="btn ghost modal-close-btn"
-                onclick="
+      <!-- Create User Modal -->
+      <div id="createUserModal" class="modal-overlay hidden">
+        <div class="modal-container modal-sm">
+          <div class="modal-header">
+            <div>
+              <p class="muted">Admin</p>
+              <h2>Create User</h2>
+            </div>
+            <button class="btn ghost modal-close-btn" onclick="
                   document
                     .getElementById('createUserModal')
                     .classList.add('hidden')
-                "
-              >
-                &times;
+                ">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="createUserForm" class="form-grid compact">
+              <label class="full">Email<input id="cuEmail" type="email" required
+                  placeholder="user@example.com" /></label>
+              <label class="full">Display Name<input id="cuName" placeholder="John Doe" /></label>
+              <label class="full">Password<input id="cuPassword" type="password" required minlength="6"
+                  placeholder="min 6 chars" /></label>
+              <label class="full">Role Level<input id="cuRoleLevel" type="number" min="1" value="100"
+                  required /></label>
+              <div class="full">
+                <p class="muted" style="margin: 0 0 4px">Scopes</p>
+                <div id="cuScopesWrap" class="scope-chips"></div>
+              </div>
+              <button class="btn primary full" type="submit">
+                Create User
               </button>
-            </div>
-            <div class="modal-body">
-              <form id="createUserForm" class="form-grid compact">
-                <label class="full"
-                  >Email<input
-                    id="cuEmail"
-                    type="email"
-                    required
-                    placeholder="user@example.com"
-                /></label>
-                <label class="full"
-                  >Display Name<input id="cuName" placeholder="John Doe"
-                /></label>
-                <label class="full"
-                  >Password<input
-                    id="cuPassword"
-                    type="password"
-                    required
-                    minlength="6"
-                    placeholder="min 6 chars"
-                /></label>
-                <label class="full"
-                  >Role Level<input
-                    id="cuRoleLevel"
-                    type="number"
-                    min="1"
-                    value="100"
-                    required
-                /></label>
-                <div class="full">
-                  <p class="muted" style="margin: 0 0 4px">Scopes</p>
-                  <div id="cuScopesWrap" class="scope-chips"></div>
-                </div>
-                <button class="btn primary full" type="submit">
-                  Create User
-                </button>
-              </form>
-            </div>
+            </form>
           </div>
         </div>
+      </div>
 
-        <!-- Edit User Modal -->
-        <div id="editUserModal" class="modal-overlay hidden">
-          <div class="modal-container modal-sm">
-            <div class="modal-header">
-              <div>
-                <p class="muted">Admin</p>
-                <h2>Edit User</h2>
-              </div>
-              <button
-                class="btn ghost modal-close-btn"
-                onclick="
+      <!-- Edit User Modal -->
+      <div id="editUserModal" class="modal-overlay hidden">
+        <div class="modal-container modal-sm">
+          <div class="modal-header">
+            <div>
+              <p class="muted">Admin</p>
+              <h2>Edit User</h2>
+            </div>
+            <button class="btn ghost modal-close-btn" onclick="
                   document
                     .getElementById('editUserModal')
                     .classList.add('hidden')
-                "
-              >
-                &times;
+                ">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editUserForm" class="form-grid compact">
+              <input type="hidden" id="euId" />
+              <label class="full">Email<input id="euEmail" type="email" required /></label>
+              <label class="full">Display Name<input id="euName" /></label>
+              <label class="full">Role Level<input id="euRoleLevel" type="number" min="1" required /></label>
+              <label class="full">New Password (optional)<input id="euPassword" type="password" minlength="6"
+                  placeholder="leave blank to keep" /></label>
+              <div class="full">
+                <p class="muted" style="margin: 0 0 4px">Scopes</p>
+                <div id="euScopesWrap" class="scope-chips"></div>
+              </div>
+              <button class="btn primary full" type="submit">
+                Save Changes
               </button>
-            </div>
-            <div class="modal-body">
-              <form id="editUserForm" class="form-grid compact">
-                <input type="hidden" id="euId" />
-                <label class="full"
-                  >Email<input id="euEmail" type="email" required
-                /></label>
-                <label class="full">Display Name<input id="euName" /></label>
-                <label class="full"
-                  >Role Level<input
-                    id="euRoleLevel"
-                    type="number"
-                    min="1"
-                    required
-                /></label>
-                <label class="full"
-                  >New Password (optional)<input
-                    id="euPassword"
-                    type="password"
-                    minlength="6"
-                    placeholder="leave blank to keep"
-                /></label>
-                <div class="full">
-                  <p class="muted" style="margin: 0 0 4px">Scopes</p>
-                  <div id="euScopesWrap" class="scope-chips"></div>
-                </div>
-                <button class="btn primary full" type="submit">
-                  Save Changes
-                </button>
-              </form>
-            </div>
+            </form>
           </div>
         </div>
+      </div>
 
-        <!-- Change Password Modal -->
-        <div id="changePwModal" class="modal-overlay hidden">
-          <div class="modal-container modal-sm">
-            <div class="modal-header">
-              <div>
-                <p class="muted">Account</p>
-                <h2>Change Password</h2>
-              </div>
-              <button
-                class="btn ghost modal-close-btn"
-                onclick="
+      <!-- Change Password Modal -->
+      <div id="changePwModal" class="modal-overlay hidden">
+        <div class="modal-container modal-sm">
+          <div class="modal-header">
+            <div>
+              <p class="muted">Account</p>
+              <h2>Change Password</h2>
+            </div>
+            <button class="btn ghost modal-close-btn" onclick="
                   document
                     .getElementById('changePwModal')
                     .classList.add('hidden')
-                "
-              >
-                &times;
-              </button>
-            </div>
-            <div class="modal-body">
-              <form id="changePwForm" class="form-grid compact">
-                <label class="full"
-                  >Current Password<input
-                    id="cpCurrent"
-                    type="password"
-                    required
-                /></label>
-                <label class="full"
-                  >New Password<input
-                    id="cpNew"
-                    type="password"
-                    required
-                    minlength="6"
-                /></label>
-                <button class="btn primary full" type="submit">Update</button>
-              </form>
-            </div>
+                ">
+              &times;
+            </button>
           </div>
-        </div>
-
-        <!-- Login Modal -->
-        <div id="loginModal" class="modal-overlay hidden">
-          <div class="modal-container modal-sm">
-            <div class="modal-header">
-              <div>
-                <p class="muted">Authentication Required</p>
-                <h2>Login</h2>
-              </div>
-            </div>
-            <div class="modal-body">
-              <form id="loginForm" class="form-grid compact">
-                <label class="full"
-                  >Email<input
-                    id="loginEmail"
-                    type="email"
-                    required
-                    placeholder="admin@example.com"
-                /></label>
-                <label class="full"
-                  >Password<input
-                    id="loginPassword"
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                /></label>
-                <p
-                  id="loginError"
-                  class="muted"
-                  style="color: var(--error); display: none; margin: 0"
-                ></p>
-                <button
-                  id="loginSubmitBtn"
-                  class="btn primary full"
-                  type="submit"
-                >
-                  Login
-                </button>
-              </form>
-            </div>
+          <div class="modal-body">
+            <form id="changePwForm" class="form-grid compact">
+              <label class="full">Current Password<input id="cpCurrent" type="password" required /></label>
+              <label class="full">New Password<input id="cpNew" type="password" required minlength="6" /></label>
+              <button class="btn primary full" type="submit">Update</button>
+            </form>
           </div>
-        </div>
-      </main>
-    </div>
-
-    <!-- Backend Log Console -->
-    <div id="logConsolePanel" class="log-console hidden">
-      <div class="log-console-header">
-        <span class="log-console-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-          Backend Console
-        </span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span id="logConsoleCount" class="log-console-badge hidden">0</span>
-          <button id="logConsoleClearBtn" class="btn ghost" style="padding:2px 8px;font-size:0.75rem">Clear</button>
-          <button id="logConsoleCloseBtn" class="btn ghost" style="padding:2px 8px;font-size:0.75rem">&times;</button>
         </div>
       </div>
-      <div id="logConsoleLines" class="log-console-lines"></div>
+
+      <!-- Login Modal -->
+      <div id="loginModal" class="modal-overlay hidden">
+        <div class="modal-container modal-sm">
+          <div class="modal-header">
+            <div>
+              <p class="muted">Authentication Required</p>
+              <h2>Login</h2>
+            </div>
+          </div>
+          <div class="modal-body">
+            <form id="loginForm" class="form-grid compact">
+              <label class="full">Email<input id="loginEmail" type="email" required
+                  placeholder="admin@example.com" /></label>
+              <label class="full">Password<input id="loginPassword" type="password" required
+                  placeholder="••••••••" /></label>
+              <p id="loginError" class="muted" style="color: var(--error); display: none; margin: 0"></p>
+              <button id="loginSubmitBtn" class="btn primary full" type="submit">
+                Login
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Backend Log Console -->
+  <div id="logConsolePanel" class="log-console hidden">
+    <div class="log-console-header">
+      <span class="log-console-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 17 10 11 4 5"></polyline>
+          <line x1="12" y1="19" x2="20" y2="19"></line>
+        </svg>
+        Backend Console
+      </span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span id="logConsoleCount" class="log-console-badge hidden">0</span>
+        <button id="logConsoleClearBtn" class="btn ghost" style="padding:2px 8px;font-size:0.75rem">Clear</button>
+        <button id="logConsoleCloseBtn" class="btn ghost" style="padding:2px 8px;font-size:0.75rem">&times;</button>
+      </div>
     </div>
+    <div id="logConsoleLines" class="log-console-lines"></div>
+  </div>
 
-    <!-- Console toggle button (bottom-right) -->
-    <button id="logConsoleToggleBtn" class="log-console-fab" title="Backend Console" aria-label="Toggle backend console">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-    </button>
+  <!-- Console toggle button (bottom-right) -->
+  <button id="logConsoleToggleBtn" class="log-console-fab" title="Backend Console" aria-label="Toggle backend console">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="4 17 10 11 4 5"></polyline>
+      <line x1="12" y1="19" x2="20" y2="19"></line>
+    </svg>
+  </button>
 
-    <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden"></div>
 
-    <script src="/app.js" defer></script>
-  </body>
+  <script src="/app.js" defer></script>
+</body>
+
 </html>
