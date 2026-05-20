@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -23,9 +25,17 @@ type Engine struct {
 	scriptsDir       string
 	toolsDir         string
 	allowedCmdLookup map[string]struct{}
+
+	mu           sync.RWMutex
+	allowedTools []string
 }
 
-func NewEngine(scriptsDir string, allowedCommands []string) *Engine {
+// NewEngine creates an autofix engine.
+//   - scriptsDir: directory where fix scripts live.
+//   - allowedCommands: runner commands allowed to execute scripts (e.g. "bash", "cmd").
+//   - allowedTools: binaries that scripts may call (e.g. "pm2", "npm", "git").
+//     Only these tools are symlinked into the sandboxed tools directory.
+func NewEngine(scriptsDir string, allowedCommands []string, allowedTools []string) *Engine {
 	lookup := make(map[string]struct{}, len(allowedCommands))
 	for _, cmd := range allowedCommands {
 		normalized := normalizeAllowedCommand(cmd)
@@ -38,6 +48,7 @@ func NewEngine(scriptsDir string, allowedCommands []string) *Engine {
 		scriptsDir:       scriptsDir,
 		toolsDir:         defaultToolsDir(),
 		allowedCmdLookup: lookup,
+		allowedTools:     dedupTools(allowedTools),
 	}
 }
 
@@ -94,16 +105,70 @@ func (e *Engine) Execute(ctx context.Context, fix FixDefinition) (Result, error)
 }
 
 // buildCleanEnv builds a minimal environment for script execution.
-// Only the tools dir is on PATH; all inherited env vars are stripped.
+// PATH is always set to the tools dir (security sandbox).
+// HOME and TERM have sensible defaults but can be overridden by
+// per-project env vars passed via userVars.
 func (e *Engine) buildCleanEnv(userVars map[string]string) []string {
-	env := make([]string, 0, len(userVars)+3)
-	env = append(env, "PATH="+e.toolsDir)
-	env = append(env, "HOME="+os.TempDir())
-	env = append(env, "TERM=dumb")
+	// Defaults — overridable by project env vars.
+	defaults := map[string]string{
+		"HOME": userHomeDir(),
+		"TERM": "dumb",
+	}
+
+	// User vars override defaults.
+	merged := make(map[string]string, len(defaults)+len(userVars))
+	for k, v := range defaults {
+		merged[k] = v
+	}
 	for k, v := range userVars {
+		merged[k] = v
+	}
+
+	// PATH is always the tools dir — not overridable.
+	env := make([]string, 0, len(merged)+1)
+	env = append(env, "PATH="+e.toolsDir)
+	for k, v := range merged {
+		if k == "PATH" {
+			continue // PATH is sandboxed, never overridable
+		}
 		env = append(env, k+"="+v)
 	}
 	return env
+}
+
+// userHomeDir returns the current user's home directory.
+// Falls back to os.TempDir() if the home directory cannot be determined.
+func userHomeDir() string {
+	if runtime.GOOS == "windows" {
+		if h := os.Getenv("USERPROFILE"); h != "" {
+			return h
+		}
+		if h := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH"); h != "" {
+			return h
+		}
+	}
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.TempDir()
+}
+
+// DefaultFixEnvVars returns the default environment variables that should be
+// seeded for every new project. These are the engine's internal defaults
+// made visible and configurable per-project.
+func DefaultFixEnvVars() []struct {
+	Name     string
+	Value    string
+	IsSecret bool
+} {
+	return []struct {
+		Name     string
+		Value    string
+		IsSecret bool
+	}{
+		{Name: "HOME", Value: userHomeDir(), IsSecret: true},
+		{Name: "TERM", Value: "dumb", IsSecret: false},
+	}
 }
 
 // resolveToolPath returns the full path to a tool in the tools directory.
@@ -219,36 +284,164 @@ func defaultToolsDir() string {
 	return "/root/.krakentools"
 }
 
-// EnsureToolsDir creates the tools directory and symlinks common tools
-// if it does not already exist. This is called once at startup.
-func EnsureToolsDir() string {
-	dir := defaultToolsDir()
-	if _, err := os.Stat(dir); err == nil {
-		return dir // already exists, don't touch it
-	}
+// AllowedTools returns the current tools whitelist.
+func (e *Engine) AllowedTools() []string {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	cp := make([]string, len(e.allowedTools))
+	copy(cp, e.allowedTools)
+	return cp
+}
+
+// SetAllowedTools replaces the tools whitelist and re-syncs the tools directory.
+// Returns the result of the sync (which tools were linked/removed/failed).
+func (e *Engine) SetAllowedTools(tools []string) SyncResult {
+	deduped := dedupTools(tools)
+	e.mu.Lock()
+	e.allowedTools = deduped
+	e.mu.Unlock()
+	return e.SyncToolsDir()
+}
+
+// ToolStatus describes the resolution state of a single whitelisted tool.
+type ToolStatus struct {
+	Name       string `json:"name"`
+	Resolved   bool   `json:"resolved"`
+	SystemPath string `json:"system_path,omitempty"`
+	LinkedPath string `json:"linked_path,omitempty"`
+	Error      string `json:"error,omitempty"`
+}
+
+// SyncResult summarises what SyncToolsDir did.
+type SyncResult struct {
+	ToolsDir string       `json:"tools_dir"`
+	Linked   []ToolStatus `json:"linked"`
+	Removed  []string     `json:"removed"`
+}
+
+// SyncToolsDir rebuilds the tools directory to match the current whitelist.
+// Tools not in the whitelist are removed; whitelisted tools are resolved via
+// exec.LookPath and symlinked (or hardlinked/copied on Windows).
+func (e *Engine) SyncToolsDir() SyncResult {
+	e.mu.RLock()
+	tools := make([]string, len(e.allowedTools))
+	copy(tools, e.allowedTools)
+	e.mu.RUnlock()
+
+	dir := e.toolsDir
+	result := SyncResult{ToolsDir: dir}
+
 	if err := os.MkdirAll(dir, 0o750); err != nil {
-		return dir
+		return result
 	}
 
-	// Symlink common dev tools that fix scripts are likely to need.
-	tools := []string{
-		"bash", "sh", "node", "npm", "npx", "pm2",
-		"python3", "pip3", "curl", "wget",
-		"docker", "git", "systemctl", "supervisorctl",
-	}
-	if runtime.GOOS == "windows" {
-		tools = append(tools, "cmd.exe", "powershell.exe")
+	// Build a set of desired tool basenames.
+	wanted := make(map[string]struct{}, len(tools))
+	for _, t := range tools {
+		wanted[t] = struct{}{}
 	}
 
+	// Remove entries that are no longer whitelisted.
+	entries, _ := os.ReadDir(dir)
+	for _, entry := range entries {
+		name := entry.Name()
+		base := name
+		// On Windows strip .exe for comparison.
+		if runtime.GOOS == "windows" {
+			base = strings.TrimSuffix(strings.ToLower(name), ".exe")
+		}
+		if _, ok := wanted[base]; !ok {
+			linkPath := filepath.Join(dir, name)
+			if err := os.Remove(linkPath); err == nil {
+				result.Removed = append(result.Removed, name)
+			}
+		}
+	}
+
+	// Link each whitelisted tool.
 	for _, tool := range tools {
+		ts := ToolStatus{Name: tool}
 		toolPath, err := exec.LookPath(tool)
 		if err != nil {
+			ts.Error = fmt.Sprintf("not found on system: %v", err)
+			result.Linked = append(result.Linked, ts)
 			continue
 		}
+		ts.SystemPath = toolPath
+
 		linkPath := filepath.Join(dir, filepath.Base(tool))
-		// Ignore errors — we just do best-effort.
-		_ = os.Symlink(toolPath, linkPath)
+		ts.LinkedPath = linkPath
+
+		// Remove existing entry (may be stale).
+		_ = os.Remove(linkPath)
+
+		if err := linkTool(toolPath, linkPath); err != nil {
+			ts.Error = err.Error()
+		} else {
+			ts.Resolved = true
+		}
+		result.Linked = append(result.Linked, ts)
 	}
 
-	return dir
+	return result
+}
+
+// linkTool creates a symlink from systemPath to linkPath.
+// On Windows, where symlinks often require elevated privileges, it falls
+// back to a hard link and then a file copy.
+func linkTool(systemPath, linkPath string) error {
+	err := os.Symlink(systemPath, linkPath)
+	if err == nil {
+		return nil
+	}
+
+	if runtime.GOOS != "windows" {
+		return fmt.Errorf("symlink failed: %w", err)
+	}
+
+	// Windows fallback: try hard link.
+	if hlErr := os.Link(systemPath, linkPath); hlErr == nil {
+		return nil
+	}
+
+	// Last resort: copy the file.
+	return copyFile(systemPath, linkPath)
+}
+
+// copyFile performs a best-effort file copy for Windows tool resolution.
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("copy open src: %w", err)
+	}
+	defer in.Close()
+
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o750)
+	if err != nil {
+		return fmt.Errorf("copy create dst: %w", err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, in); err != nil {
+		return fmt.Errorf("copy data: %w", err)
+	}
+	return nil
+}
+
+// dedupTools returns a de-duplicated, trimmed copy of the tools list.
+func dedupTools(tools []string) []string {
+	seen := make(map[string]struct{}, len(tools))
+	out := make([]string, 0, len(tools))
+	for _, t := range tools {
+		t = strings.TrimSpace(t)
+		if t == "" {
+			continue
+		}
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		seen[t] = struct{}{}
+		out = append(out, t)
+	}
+	return out
 }

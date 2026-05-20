@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os/exec"
@@ -42,13 +43,13 @@ func (w *Worker) Run(ctx context.Context) {
 			w.handleFixJob(ctx, fixJob)
 			continue
 		}
-		if err != queue.ErrNoJob {
+		if err != queue.ErrNoJob && !errors.Is(err, context.Canceled) {
 			w.Log.Printf("dequeue fix failed: %v", err)
 		}
 
-		job, err := w.Queue.DequeueCheck(ctx, 4*time.Second)
+		job, err := w.Queue.DequeueCheck(ctx, 1*time.Second)
 		if err != nil {
-			if err == queue.ErrNoJob {
+			if err == queue.ErrNoJob || errors.Is(err, context.Canceled) {
 				continue
 			}
 			w.Log.Printf("dequeue check failed: %v", err)

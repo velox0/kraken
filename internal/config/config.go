@@ -16,6 +16,7 @@ type Config struct {
 	SchedulerTickSec   int
 	FixScriptsDir      string
 	AllowedFixCommands []string
+	AllowedFixTools    []string
 	FixEnvSecret       string
 	AlertCooldownSec   int
 	Environment        string
@@ -38,6 +39,7 @@ func Load() Config {
 		SchedulerTickSec:   envInt("SCHEDULER_TICK_SEC", 2),
 		FixScriptsDir:      envOrDefault("FIX_SCRIPTS_DIR", "scripts/fixes"),
 		AllowedFixCommands: envCSV("ALLOWED_FIX_COMMANDS", defaultAllowedFixCommands()),
+		AllowedFixTools:    envCSV("ALLOWED_FIX_TOOLS", defaultAllowedFixTools()),
 		FixEnvSecret:       os.Getenv("FIX_ENV_SECRET"),
 		AlertCooldownSec:   envInt("ALERT_COOLDOWN_SEC", 300),
 		Environment:        envOrDefault("APP_ENV", "dev"),
@@ -55,6 +57,39 @@ func defaultAllowedFixCommands() []string {
 		return []string{"cmd", "bash"}
 	}
 	return []string{"bash"}
+}
+
+// defaultAllowedFixTools returns the platform-aware default list of tools
+// that fix scripts are permitted to call. Only these binaries are symlinked
+// into the sandboxed tools directory.
+func defaultAllowedFixTools() []string {
+	tools := []string{
+		// Shells (also used as runners)
+		"bash", "sh",
+		// Node.js ecosystem
+		"node", "npm", "npx", "pm2", "yarn", "pnpm",
+		// Python
+		"python3", "python", "pip3", "pip",
+		// HTTP / network
+		"curl", "wget",
+		// Containers
+		"docker", "docker-compose",
+		// Version control
+		"git",
+		// Process / service management
+		"systemctl", "supervisorctl", "service",
+		// Common utilities
+		"make", "cat", "grep", "awk", "sed", "env", "echo", "printf",
+		"kill", "pkill", "lsof", "sleep", "date", "touch", "mkdir",
+		"cp", "mv", "rm", "ls", "chmod", "chown", "head", "tail",
+		"sort", "uniq", "wc", "tee", "xargs", "find", "dirname",
+		// Servers
+		"nginx", "redis-cli",
+	}
+	if runtime.GOOS == "windows" {
+		tools = append(tools, "cmd.exe", "powershell.exe")
+	}
+	return tools
 }
 
 func envOrDefault(key, fallback string) string {

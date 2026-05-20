@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -57,10 +58,9 @@ func run() error {
 		store.SetFixEnvCrypto(autofixCrypto)
 	}
 
-	toolsDir := autofix.EnsureToolsDir()
-	logger.Printf("fix tools dir: %s", toolsDir)
-
-	autofixEngine := autofix.NewEngine(cfg.FixScriptsDir, cfg.AllowedFixCommands)
+	autofixEngine := autofix.NewEngine(cfg.FixScriptsDir, cfg.AllowedFixCommands, cfg.AllowedFixTools)
+	syncResult := autofixEngine.SyncToolsDir()
+	logger.Printf("fix tools dir: %s (%d tools linked, %d removed)", syncResult.ToolsDir, len(syncResult.Linked), len(syncResult.Removed))
 	incSvc := incident.NewService(store, q, autofixEngine, time.Duration(cfg.AlertCooldownSec)*time.Second, incident.EmailConfig{
 		Host: cfg.EmailHost,
 		Port: cfg.EmailPort,
@@ -105,10 +105,11 @@ func run() error {
 	runCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	handler := api.NewHandler(store, q, cfg.FixScriptsDir, cfg.UIDir, lb)
+	handler := api.NewHandler(store, q, cfg.FixScriptsDir, cfg.UIDir, lb, autofixEngine)
 	srv := &http.Server{
 		Addr:         cfg.APIAddr,
 		Handler:      handler.Router(),
+		BaseContext:  func(_ net.Listener) context.Context { return runCtx },
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 0, // disabled: SSE connections are long-lived
 		IdleTimeout:  60 * time.Second,

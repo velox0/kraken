@@ -40,7 +40,8 @@ func run() error {
 		return fmt.Errorf("redis unavailable: %w", err)
 	}
 
-	autofixEngine := autofix.NewEngine(cfg.FixScriptsDir, cfg.AllowedFixCommands)
+	autofixEngine := autofix.NewEngine(cfg.FixScriptsDir, cfg.AllowedFixCommands, cfg.AllowedFixTools)
+	autofixEngine.SyncToolsDir()
 	incSvc := incident.NewService(store, q, autofixEngine, time.Duration(cfg.AlertCooldownSec)*time.Second, incident.EmailConfig{
 		Host: cfg.EmailHost,
 		Port: cfg.EmailPort,

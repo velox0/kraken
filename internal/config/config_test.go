@@ -35,6 +35,22 @@ func TestLoadUsesDefaults(t *testing.T) {
 	} else {
 		wantCommands(t, got.AllowedFixCommands, []string{"bash"})
 	}
+	if len(got.AllowedFixTools) == 0 {
+		t.Fatal("AllowedFixTools is empty")
+	}
+	// Verify key defaults are present.
+	for _, want := range []string{"bash", "npm", "pm2", "git", "curl"} {
+		found := false
+		for _, tool := range got.AllowedFixTools {
+			if tool == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("AllowedFixTools missing default %q", want)
+		}
+	}
 }
 
 func TestLoadReadsDotEnvWithoutOverridingProcessEnv(t *testing.T) {
@@ -47,6 +63,7 @@ API_ADDR=:7000
 REDIS_DB=2
 SCHEDULER_TICK_SEC=bad
 ALLOWED_FIX_COMMANDS= bash, cmd.exe, , powershell 
+ALLOWED_FIX_TOOLS=npm,git,docker
 EMAIL_USER='alerts@example.com'
 EMAIL_FROM=""
 `), 0o600)
@@ -66,6 +83,7 @@ EMAIL_FROM=""
 		t.Fatalf("SchedulerTickSec = %d, want fallback for invalid int", got.SchedulerTickSec)
 	}
 	wantCommands(t, got.AllowedFixCommands, []string{"bash", "cmd.exe", "powershell"})
+	wantCommands(t, got.AllowedFixTools, []string{"npm", "git", "docker"})
 	if got.EmailUser != "alerts@example.com" {
 		t.Fatalf("EmailUser = %q, want stripped quoted value", got.EmailUser)
 	}
@@ -93,6 +111,7 @@ func clearConfigEnv(t *testing.T) {
 		"SCHEDULER_TICK_SEC",
 		"FIX_SCRIPTS_DIR",
 		"ALLOWED_FIX_COMMANDS",
+		"ALLOWED_FIX_TOOLS",
 		"FIX_ENV_SECRET",
 		"ALERT_COOLDOWN_SEC",
 		"APP_ENV",

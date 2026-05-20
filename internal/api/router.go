@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/velox0/kraken/internal/assets"
+	"github.com/velox0/kraken/internal/autofix"
 	"github.com/velox0/kraken/internal/db"
 	"github.com/velox0/kraken/internal/logbuf"
 	"github.com/velox0/kraken/internal/queue"
@@ -26,15 +27,17 @@ type Handler struct {
 	fixScriptsDir string
 	uiDir         string
 	logBuf        *logbuf.Buffer
+	autofixEngine *autofix.Engine
 }
 
-func NewHandler(store *db.Store, q *queue.RedisQueue, fixScriptsDir, uiDir string, lb *logbuf.Buffer) *Handler {
+func NewHandler(store *db.Store, q *queue.RedisQueue, fixScriptsDir, uiDir string, lb *logbuf.Buffer, engine *autofix.Engine) *Handler {
 	return &Handler{
 		store:         store,
 		queue:         q,
 		fixScriptsDir: fixScriptsDir,
 		uiDir:         uiDir,
 		logBuf:        lb,
+		autofixEngine: engine,
 	}
 }
 
@@ -91,9 +94,14 @@ func (h *Handler) Router() http.Handler {
 			r.With(RequireScope("fixes:read")).Get("/projects/{projectID}/fix-runs/{runID}", h.getFixRun)
 			r.With(RequireScope("fixes:read")).Get("/projects/{projectID}/env-vars", h.listFixEnvVars)
 			r.With(RequireScope("fixes:write")).Post("/projects/{projectID}/env-vars", h.setFixEnvVar)
+			r.With(RequireScope("fixes:write")).Post("/projects/{projectID}/env-vars/reset-defaults", h.resetDefaultFixEnvVars)
 			r.With(RequireScope("fixes:delete")).Delete("/projects/{projectID}/env-vars/{envVarID}", h.deleteFixEnvVar)
 			r.With(RequireScope("smtp_profiles:read")).Get("/smtp_profiles", h.listSMTPProfiles)
 			r.With(RequireScope("smtp_profiles:write")).Post("/smtp_profiles", h.createSMTPProfile)
+
+			// Fix tools whitelist management
+			r.With(RequireScope("fixes:read")).Get("/fix-tools", h.listFixTools)
+			r.With(RequireScope("fixes:write")).Put("/fix-tools", h.updateFixTools)
 		})
 	})
 

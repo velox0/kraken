@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 
+	"github.com/velox0/kraken/internal/autofix"
 	"github.com/velox0/kraken/internal/db"
 	"github.com/velox0/kraken/internal/queue"
 )
@@ -34,6 +36,11 @@ func (h *Handler) createProject(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
+
+	// Seed default fix environment variables so they're visible and
+	// configurable per-project (HOME, TERM, etc.).
+	h.seedDefaultFixEnvVars(r.Context(), project.ID)
+
 	writeJSON(w, http.StatusCreated, project)
 }
 
@@ -260,4 +267,14 @@ func (h *Handler) runProjectNow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusAccepted, map[string]any{"queued": len(checks), "project_id": projectID})
+}
+
+// seedDefaultFixEnvVars creates the default fix environment variables for a
+// newly created project. These make the engine's internal defaults (HOME, TERM)
+// visible and editable in the project's env vars UI. Best-effort — errors are
+// silently ignored since the engine applies fallback defaults anyway.
+func (h *Handler) seedDefaultFixEnvVars(ctx context.Context, projectID int64) {
+	for _, d := range autofix.DefaultFixEnvVars() {
+		_, _ = h.store.UpsertFixEnvVar(ctx, projectID, d.Name, d.Value, d.IsSecret)
+	}
 }

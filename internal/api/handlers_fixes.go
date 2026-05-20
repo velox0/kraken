@@ -372,3 +372,26 @@ func (h *Handler) deleteFixEnvVar(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"deleted": true, "id": envVarID})
 }
+
+// resetDefaultFixEnvVars re-seeds only the default env vars (HOME, TERM)
+// back to their default values. Custom user-added vars are left untouched.
+func (h *Handler) resetDefaultFixEnvVars(w http.ResponseWriter, r *http.Request) {
+	projectID, err := parseIDParam(r, "projectID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	h.seedDefaultFixEnvVars(r.Context(), projectID)
+
+	// Return the updated env vars list.
+	vars, err := h.store.ListFixEnvVars(r.Context(), projectID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"reset":    true,
+		"env_vars": vars,
+	})
+}

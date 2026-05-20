@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/velox0/kraken/internal/api"
+	"github.com/velox0/kraken/internal/autofix"
 	"github.com/velox0/kraken/internal/config"
 	"github.com/velox0/kraken/internal/db"
 	"github.com/velox0/kraken/internal/queue"
@@ -40,7 +41,10 @@ func run() error {
 		return fmt.Errorf("redis unavailable: %w", err)
 	}
 
-	handler := api.NewHandler(store, q, cfg.FixScriptsDir, cfg.UIDir, nil)
+	autofixEngine := autofix.NewEngine(cfg.FixScriptsDir, cfg.AllowedFixCommands, cfg.AllowedFixTools)
+	autofixEngine.SyncToolsDir()
+
+	handler := api.NewHandler(store, q, cfg.FixScriptsDir, cfg.UIDir, nil, autofixEngine)
 	srv := &http.Server{
 		Addr:         cfg.APIAddr,
 		Handler:      handler.Router(),
