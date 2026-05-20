@@ -2,7 +2,7 @@
        setup-postgres setup-redis setup-local
 
 up:
-	docker compose up -d
+	docker compose up -d postgres redis
 
 down:
 	docker compose down
