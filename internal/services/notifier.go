@@ -33,7 +33,7 @@ func (n *Notifier) Run(ctx context.Context) {
 		default:
 		}
 
-		job, err := n.Queue.DequeueEmail(ctx, 5*time.Second)
+		job, err := n.Queue.DequeueEmail(ctx, 1*time.Second)
 		if err != nil {
 			if err == queue.ErrNoJob {
 				continue
